@@ -1,0 +1,17 @@
+{
+  "name": "codeuncode-core-new",
+  "private": true,
+  "scripts": {
+    "dev:cms": "pnpm --filter cu-core dev",
+    "dev:web": "pnpm --filter cu-web dev",
+    "build:web": "pnpm --filter cu-web build"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild",
+      "unrs-resolver",
+      "workerd"
+    ]
+  }
+}

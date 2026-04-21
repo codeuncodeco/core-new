@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# build outputs
+.next/
+.open-next/
+dist/
+out/
+build/
+
+# astro
+.astro/
+
+# wrangler / miniflare
+.wrangler/
+.dev.vars
+
+# env files (committed templates stay)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.pem
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# typecheck / cache
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# testing
+coverage/
+.nyc_output/
+
+# one-off DB exports / backups
+prod-backup-*.sql
