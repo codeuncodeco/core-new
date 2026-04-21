@@ -1,0 +1,165 @@
+---
+import ServiceIcon from "./ServiceIcon.astro";
+import { getPartners, mediaUrl } from "../lib/cms";
+import type { Partner } from "@cms/payload-types";
+
+// Optional `partners` prop lets callers (e.g. SSR preview routes) inject a
+// specific list. When omitted, we fetch published partners ourselves — the
+// default behavior for the public /about page.
+type Props = { partners?: Partner[] };
+const { partners: injected } = Astro.props as Props;
+
+type ResolvedPartner = {
+  id: number;
+  name: string;
+  tagline: string;
+  href: string;
+  icon: string;
+  imageUrl: string | null;
+  imageAlt: string;
+};
+
+const raw = injected ?? (await getPartners());
+
+const partners: ResolvedPartner[] = raw.map((p): ResolvedPartner => {
+  const image = typeof p.image === "object" && p.image ? p.image : null;
+  return {
+    id: p.id,
+    name: p.name,
+    tagline: p.tagline,
+    href: p.href,
+    icon: p.icon,
+    imageUrl: mediaUrl(image?.url),
+    imageAlt: image?.alt ?? `${p.name} logo`,
+  };
+});
+---
+
+<section class="partners">
+  <p class="partners__eyebrow">Partners</p>
+  <p class="partners__blurb">
+    The people we call on to push the work further.
+  </p>
+
+  <ul class="partners__list">
+    {
+      partners.map((partner) => (
+        <li class="partner">
+          <span class="partner__icon" aria-hidden="true">
+            {partner.imageUrl ? (
+              <img src={partner.imageUrl} alt={partner.imageAlt} loading="lazy" decoding="async" />
+            ) : (
+              <ServiceIcon name={partner.icon} size={20} />
+            )}
+          </span>
+          <span class="partner__text">
+            <a
+              class="partner__name"
+              href={partner.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {partner.name}
+            </a>
+            <span class="partner__dash" aria-hidden="true">
+              {" — "}
+            </span>
+            <span class="partner__tagline">{partner.tagline}</span>
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .partners {
+    max-width: 60rem;
+    margin: 0 auto 5rem;
+  }
+  .partners__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-dim);
+    margin: 0 0 0.5rem;
+  }
+  .partners__blurb {
+    color: var(--color-muted);
+    margin: 0 0 1.5rem;
+    font-size: 0.95rem;
+    max-width: 32rem;
+  }
+
+  .partners__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .partner {
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    line-height: 1.5;
+  }
+  .partner__icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    color: var(--color-dim);
+    transform: translateY(0.15em);
+  }
+  .partner__text {
+    min-width: 0;
+  }
+  .partner__name {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--color-fg);
+    text-decoration: none;
+    background-image: linear-gradient(var(--color-accent), var(--color-accent));
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0 2px;
+    transition: background-size 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    padding-bottom: 1px;
+  }
+  .partner__name:hover,
+  .partner__name:focus-visible {
+    background-size: 100% 2px;
+  }
+  .partner__dash {
+    color: var(--color-dim);
+  }
+  .partner__tagline {
+    color: var(--color-muted);
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 640px) {
+    .partners {
+      margin-bottom: 4rem;
+    }
+    .partners__blurb {
+      font-size: 0.9rem;
+    }
+    .partner {
+      gap: 0.7rem;
+    }
+    .partner__name {
+      font-size: 1.05rem;
+    }
+    .partner__tagline {
+      font-size: 0.88rem;
+    }
+  }
+</style>

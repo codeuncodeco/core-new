@@ -1,0 +1,16 @@
+---
+type Props = {
+  name?: string | null;
+  size?: number;
+  class?: string;
+};
+
+const { name, size = 20, class: className = "" } = Astro.props;
+const icon = (name ?? "").trim() || "circle";
+---
+
+<i
+  class={`fa-slab fa-regular fa-${icon} ${className}`}
+  style={`font-size: ${size}px; width: ${size}px; height: ${size}px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;`}
+  aria-hidden="true"
+></i>

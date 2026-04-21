@@ -1,0 +1,26 @@
+{
+  "name": "cu-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler dev",
+    "deploy": "astro build && wrangler deploy",
+    "astro": "astro",
+    "typecheck": "astro check",
+    "fallbacks:fetch": "node scripts/fetch-project-fallbacks.mjs"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12",
+    "@payloadcms/live-preview": "^3.83.0",
+    "astro": "^5.14.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@tailwindcss/vite": "^4.1.14",
+    "tailwindcss": "^4.1.14",
+    "typescript": "^5.9.0",
+    "wrangler": "^4.43.0"
+  }
+}

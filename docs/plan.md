@@ -20,7 +20,7 @@ Everything below executes in phases. Each phase has a clear end gate — nothing
 
 | # | Topic | Resolution |
 |---|---|---|
-| 1 | Environments | **Three**: local (miniflare), staging (remote), prod (remote). Independent D1s, R2s, and workers. |
+| 1 | Environments | **Three**: local (miniflare), beta (remote), prod (remote). Independent D1s, R2s, and workers. |
 | 2 | Local dev DB | **Miniflare file-based D1.** No remote dev DB. |
 | 3 | Data migration (Phase 6) | **Export from old prod D1, import into new prod D1.** Media migrated from old R2. |
 | 4 | Repo name | **`core-new`** locally. Rename to `core` as part of Phase 6 cutover. |
@@ -35,11 +35,11 @@ Everything below executes in phases. Each phase has a clear end gate — nothing
 | Env | CMS worker | CMS domain | D1 | R2 | Web worker | Web domain |
 |---|---|---|---|---|---|---|
 | local | `next dev` | http://localhost:3000 | miniflare (`.wrangler/`) | miniflare | `astro dev` | http://localhost:4321 |
-| staging | `cu-core-staging` | cms-staging.codeuncode.com | `cu-core-staging` (D1) | `cu-core-staging` (R2) | `cu-web-staging` | staging.codeuncode.com |
+| beta | `cu-core-beta` | cms-beta.codeuncode.com | `cu-core-staging` (D1) | `cu-core-staging` (R2) | `cu-web-beta` | beta.codeuncode.com |
 | prod | `cu-core` | cms.codeuncode.com | `cu-core-prod` (D1) | `cu-core-prod` (R2) | `cu-web` | codeuncode.com |
 
 Wrangler config layout:
-- **Top-level** = staging (so `wrangler deploy` without `--env` deploys staging, reducing accidental-prod risk).
+- **Top-level** = beta (so `wrangler deploy` without `--env` deploys beta, reducing accidental-prod risk).
 - **`env.production`** = prod. Deploys require explicit `--env production`.
 - **No `"remote": true` anywhere.** CLI operations that need remote bindings pass `--remote` explicitly (e.g. `wrangler d1 execute --remote`), or rely on `NODE_ENV=production` triggering remote bindings via `getCloudflareContext`.
 
@@ -55,11 +55,11 @@ Wrangler config layout:
 - `admin.livePreview.url` + `admin.livePreview.breakpoints` configured per collection. Shared preview routes use `?collection=<slug>` query param.
 - SSR `/preview/*` routes forward the editor's auth cookie on upstream CMS fetches, respond to POST by merging body into the fetched list, then return fresh HTML.
 - Client bridge (`apps/web/src/scripts/live-preview.ts`): calls `ready({ serverURL })`, listens via `isLivePreviewEvent()`, POSTs back to its own URL, swaps `document.body.innerHTML` with the response. No reloads.
-- Preview routes set `X-Robots-Tag: noindex` + CSP `frame-ancestors 'self' https://cms.codeuncode.com https://cms-staging.codeuncode.com http://localhost:3000`.
+- Preview routes set `X-Robots-Tag: noindex` + CSP `frame-ancestors 'self' https://cms.codeuncode.com https://cms-beta.codeuncode.com http://localhost:3000`.
 
 ### Auth cookies
 
-- `Users.auth.cookies.domain` set to `.codeuncode.com` in staging + prod. Undefined locally (default port-scoped). Allows `codeuncode.com` (and staging equivalent) to forward the session cookie to `cms.codeuncode.com` for authenticated draft reads.
+- `Users.auth.cookies.domain` set to `.codeuncode.com` in beta + prod. Undefined locally (default port-scoped). Allows `codeuncode.com` (and beta equivalent) to forward the session cookie to `cms.codeuncode.com` for authenticated draft reads.
 
 ### Seeding
 
@@ -95,9 +95,10 @@ Wrangler config layout:
 **Deliverables:**
 - `package.json`, `pnpm-workspace.yaml`, `.gitignore`, `.prettierrc`, `.editorconfig`, `README.md`.
 - Empty `apps/cms/` and `apps/web/` directories.
-- Cloudflare resources created and their IDs recorded in `.env.example`:
-  - D1: `cu-core-staging`, `cu-core-prod`.
-  - R2: `cu-core-staging`, `cu-core-prod`.
+- Cloudflare resources created and their IDs recorded in wrangler.jsonc:
+  - D1: `cu-core-staging` (used for beta), `cu-core-prod`.
+  - R2: `cu-core-staging` (used for beta), `cu-core-prod`.
+  - Naming note: beta-env resources kept their original "-staging" names (they were created before the env was renamed).
 - `.env.example` for CMS and web with all required keys (D1 IDs, R2 names, Resend API key, PAYLOAD_SECRET, WEB_URL, PUBLIC_CMS_URL, SEED_SECRET).
 - Local dev doesn't need remote bindings — miniflare handles D1 + R2 emulation.
 
@@ -117,7 +118,7 @@ Wrangler config layout:
 **Deliverables:**
 - `apps/cms/` bootstrapped from Payload `with-cloudflare-d1` template.
 - `apps/cms/wrangler.jsonc`:
-  - Top-level (staging): `cu-core-staging` D1 + R2 bindings, `routes: [{ pattern: "cms-staging.codeuncode.com", custom_domain: true }]`, `vars: { WEB_URL: "https://staging.codeuncode.com" }`.
+  - Top-level (beta): worker name `cu-core-beta`, D1 binding to `cu-core-staging`, R2 binding to `cu-core-staging`, `routes: [{ pattern: "cms-beta.codeuncode.com", custom_domain: true }]`, `vars: { WEB_URL: "https://beta.codeuncode.com" }`.
   - `env.production`: `cu-core` worker, `cu-core-prod` D1 + R2, `cms.codeuncode.com` route, `WEB_URL: "https://codeuncode.com"`.
 - `payload.config.ts`:
   - D1 adapter with `push: process.env.NODE_ENV !== 'production'`.
@@ -152,7 +153,7 @@ Wrangler config layout:
 - `apps/web/` scaffolded as Astro 5 with `@astrojs/cloudflare@^12` adapter.
 - `astro.config.mjs`: `output: 'static'`, adapter: `cloudflare()`.
 - `apps/web/wrangler.jsonc`:
-  - Top-level (staging): `cu-web-staging` name, `main: "./dist/_worker.js/index.js"`, `compatibility_flags: ["nodejs_compat"]`, `assets.binding: "ASSETS"`, staging.codeuncode.com route.
+  - Top-level (beta): `cu-web-beta` name, `main: "./dist/_worker.js/index.js"`, `compatibility_flags: ["nodejs_compat"]`, `assets.binding: "ASSETS"`, beta.codeuncode.com route.
   - `env.production`: `cu-web` name, `codeuncode.com` route.
 - `public/.assetsignore` with `_worker.js` + `_routes.json`.
 - `src/lib/cms.ts`: `getPartners()` + `getPartnersPreview(cookie)` + `mediaUrl()` + graceful empty-list fallback on CMS down.
@@ -173,23 +174,23 @@ Wrangler config layout:
 
 ### Phase 3 — Staging deployment (infra validation)
 
-**Goals:** deploy both apps to staging; verify the local ≠ staging separation; prove the migration + deploy workflow works without CLI fights. Prod deployment intentionally deferred to Phase 6 — until then, old-core remains prod.
+**Goals:** deploy both apps to beta; verify the local ≠ beta separation; prove the migration + deploy workflow works without CLI fights. Prod deployment intentionally deferred to Phase 6 — until then, old-core remains prod.
 
 **Deliverables:**
 - Deploy scripts:
-  - `pnpm --filter cu-core deploy:staging` → `deploy:db:staging && deploy:app:staging`.
+  - `pnpm --filter cu-core deploy:beta` → `deploy:db:beta && deploy:app:beta`.
   - Same pattern for web app.
 - Migration for Partners + versions tables generated locally, committed.
 - Staging Cloudflare build integration wired (auto-deploy on push to main, or a specific branch).
 - Prod config present in `wrangler.jsonc` (`env.production`) but not deployed yet.
 
 **Validation:**
-- CMS staging at https://cms-staging.codeuncode.com/admin loads. Partners visible, seeded.
-- Web staging at https://staging.codeuncode.com/about renders Partners.
-- Cross-env isolation: wipe + reseed local → staging unaffected. Wipe + reseed staging → local unaffected.
-- Staging `/preview/about` iframe works end-to-end from the staging CMS admin.
+- CMS beta at https://cms-beta.codeuncode.com/admin loads. Partners visible, seeded.
+- Web beta at https://beta.codeuncode.com/about renders Partners.
+- Cross-env isolation: wipe + reseed local → beta unaffected. Wipe + reseed beta → local unaffected.
+- Beta `/preview/about` iframe works end-to-end from the beta CMS admin.
 
-**End gate:** staging is working, publicly accessible, live preview confirmed.
+**End gate:** beta is working, publicly accessible, live preview confirmed.
 
 ---
 
@@ -208,7 +209,7 @@ Wrangler config layout:
 2. If draftable → `versions: { drafts: true }` + `admin.livePreview.url`. No `published` field.
 3. Extend seed with `<collection>-data.ts`, include in `/seed` handler with `?only=` support.
 4. Generate + commit migration.
-5. Apply locally via miniflare push; apply to staging via `deploy:db:staging`.
+5. Apply locally via miniflare push; apply to beta via `deploy:db:beta`.
 6. Validate admin UI + API + seed endpoint for the new collection.
 
 Batches in order:
@@ -281,18 +282,20 @@ Batches in order:
 ## Current status
 
 - [x] Plan drafted and decisions locked in.
-- [ ] Phase 0 — Scaffolding + CF resources.
-- [ ] Phase 1 — CMS foundation (Partners + drafts + livePreview).
-- [ ] Phase 2 — Web foundation + live preview iframe bridge.
-- [ ] Phase 3 — Staging + prod deploy, infra validation.
+- [x] Phase 0 — Scaffolding + CF resources (D1 + R2 provisioned, repo skeleton in).
+- [x] Phase 1 — CMS foundation scaffolded: Partners collection with drafts + livePreview + breakpoints, Users cookie-scoped for prod, seed/wipe routes with `?only=` filter, `push` gated on NODE_ENV, wrangler points at beta D1/R2.
+- [x] Phase 2 — Web foundation scaffolded: Astro + @astrojs/cloudflare adapter, `/preview/about` SSR with cookie forwarding + POST-body merge, shared `live-preview.ts` bridge (`ready()` + POST-back + body swap), `.assetsignore` + `main` for Workers deploy.
+- [ ] Phase 3 — Beta deploy + infra validation.
 - [ ] Phase 4 — Remaining collections with drafts.
 - [ ] Phase 5 — Remaining web pages + preview routes.
 - [ ] Phase 6 — Content cutover.
 
+Phases 1 and 2 are scaffolded in code but NOT yet validated end-to-end (needs a fresh `pnpm dev:cms` + admin user creation + seed + browser check). That verification is the Phase 3 end-gate work.
+
 ## Before Phase 0 kicks off — things you do
 
-1. Ensure you have a Cloudflare API token with scopes for D1, R2, Workers, and DNS/Routes (for staging domain setup). If using `wrangler login` interactively that's fine too.
-2. Make sure DNS for `cms-staging.codeuncode.com` + `staging.codeuncode.com` can be added — either Cloudflare controls the zone (ideal) or we coordinate with whoever does.
+1. Ensure you have a Cloudflare API token with scopes for D1, R2, Workers, and DNS/Routes (for beta domain setup). If using `wrangler login` interactively that's fine too.
+2. Make sure DNS for `cms-beta.codeuncode.com` + `beta.codeuncode.com` can be added — either Cloudflare controls the zone (ideal) or we coordinate with whoever does.
 3. Keep a Resend API key handy (reuse old-core's or issue a fresh one) — used starting Phase 4.
 
 Everything else Phase 0 generates from scratch.

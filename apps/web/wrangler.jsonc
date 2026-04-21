@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cu-web-beta",
+  "compatibility_date": "2026-01-01",
+  "compatibility_flags": [
+    // Required by @astrojs/cloudflare for the SSR worker.
+    "nodejs_compat",
+  ],
+  // Astro's cloudflare adapter emits the SSR worker at this path. Without
+  // `main`, wrangler would deploy as pure static assets and /preview/* would 404.
+  "main": "./dist/_worker.js/index.js",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "binding": "ASSETS",
+  },
+  // "beta" = new-core's pre-cutover public URL. Swaps to codeuncode.com at Phase 6.
+  "routes": [{ "pattern": "beta.codeuncode.com", "custom_domain": true }],
+}

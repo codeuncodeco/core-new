@@ -1,0 +1,39 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "cu-core-beta",
+  "compatibility_date": "2025-08-15",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public",
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  // "beta" is the single pre-cutover deploy target for new-core. It's our
+  // public-facing prod-until-cutover (pairs with the web app at
+  // beta.codeuncode.com). At Phase 6 we swap to `cu-core` + cms.codeuncode.com
+  // and retire old-core. Until then, deploy with a plain `wrangler deploy`.
+  //
+  // Local dev (`next dev`) uses miniflare for D1 + R2 — doesn't touch remote.
+  "vars": {
+    "WEB_URL": "https://beta.codeuncode.com",
+  },
+  "routes": [{ "pattern": "cms-beta.codeuncode.com", "custom_domain": true }],
+  "d1_databases": [
+    {
+      "binding": "D1",
+      "database_name": "cu-core-staging",
+      "database_id": "65355fa8-c96f-4ff0-9bd6-48a1861ac3f7",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "cu-core-staging",
+    },
+  ],
+  // env.production intentionally absent until Phase 6 cutover. Adding it
+  // would claim `cu-core` + cms.codeuncode.com which old-core still owns.
+}
