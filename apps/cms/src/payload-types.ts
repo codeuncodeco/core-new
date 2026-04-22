@@ -69,7 +69,13 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    categories: Category;
+    tags: Tag;
+    services: Service;
+    projects: Project;
+    brands: Brand;
     partners: Partner;
+    'contact-submissions': ContactSubmission;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -79,7 +85,13 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    services: ServicesSelect<false> | ServicesSelect<true>;
+    projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    brands: BrandsSelect<false> | BrandsSelect<true>;
     partners: PartnersSelect<false> | PartnersSelect<true>;
+    'contact-submissions': ContactSubmissionsSelect<false> | ContactSubmissionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -89,8 +101,14 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'rate-card-settings': RateCardSetting;
+    'email-settings': EmailSetting;
+  };
+  globalsSelect: {
+    'rate-card-settings': RateCardSettingsSelect<false> | RateCardSettingsSelect<true>;
+    'email-settings': EmailSettingsSelect<false> | EmailSettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -162,6 +180,210 @@ export interface Media {
   height?: number | null;
 }
 /**
+ * Top-level groupings for services (Design, Development, etc.).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  title: string;
+  /**
+   * Auto-generated from title if left blank.
+   */
+  slug: string;
+  /**
+   * Shown under the category heading on /services.
+   */
+  blurb?: string | null;
+  /**
+   * Font Awesome icon name (e.g. "code", "palette", "pen-ruler"). Rendered as fa-slab fa-regular fa-{name}. Browse at https://fontawesome.com/icons?s=slab&m=regular
+   */
+  icon: string;
+  displayOrder: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Reusable keywords/tools shown as chips on services.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  /**
+   * Display form, e.g. "Astro", "E-commerce".
+   */
+  label: string;
+  /**
+   * Auto-generated from label if left blank.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "services".
+ */
+export interface Service {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * Top-level grouping. Controls which section this appears in on /services.
+   */
+  category: number | Category;
+  /**
+   * Feature this service as a large card at the top of its category. Flagships sort above the rest; within flagships, lower displayOrder wins.
+   */
+  flagship?: boolean | null;
+  /**
+   * Font Awesome icon name (e.g. "code", "palette", "pen-ruler"). Rendered as fa-slab fa-regular fa-{name}. Leave blank to inherit the category icon. Browse at https://fontawesome.com/icons?s=slab&m=regular
+   */
+  icon?: string | null;
+  /**
+   * Reusable keywords/tools shown as chips (e.g. Astro, Payload, E-commerce).
+   */
+  tags?: (number | Tag)[] | null;
+  /**
+   * Short blurb for cards.
+   */
+  summary?: string | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * One row per price variant. A flat-priced service needs a single row with just `amount`.
+   */
+  prices?:
+    | {
+        /**
+         * e.g. "Single side", "8 pages", "5ft x 5ft". Omit for flat.
+         */
+        label?: string | null;
+        amount: number;
+        /**
+         * e.g. "per month", "per page", "per word".
+         */
+        suffix?: string | null;
+        /**
+         * e.g. "invoiced based on usage", "starting from".
+         */
+        note?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  inclusions?:
+    | {
+        item: string;
+        id?: string | null;
+      }[]
+    | null;
+  exclusions?:
+    | {
+        item: string;
+        id?: string | null;
+      }[]
+    | null;
+  displayOrder?: number | null;
+  /**
+   * Not rendered publicly.
+   */
+  internalNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects".
+ */
+export interface Project {
+  id: number;
+  title: string;
+  slug: string;
+  /**
+   * Short blurb for cards.
+   */
+  summary?: string | null;
+  /**
+   * Live URL.
+   */
+  url?: string | null;
+  /**
+   * Source repo URL, if public.
+   */
+  repoUrl?: string | null;
+  /**
+   * Client name, or blank for internal/personal.
+   */
+  client?: string | null;
+  /**
+   * Cover image for listings.
+   */
+  cover?: (number | null) | Media;
+  /**
+   * Free-form tags - mix of tech and domain (e.g. "astro", "shopify", "pwa", "visualization").
+   */
+  tags?: string[] | null;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  featured?: boolean | null;
+  displayOrder?: number | null;
+  /**
+   * Not rendered publicly.
+   */
+  internalNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Brands we work with — logo, name, and primary domain.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands".
+ */
+export interface Brand {
+  id: number;
+  name: string;
+  /**
+   * Primary domain, e.g. "example.com". Protocol (http://, https://) and trailing slashes are stripped automatically.
+   */
+  domain: string;
+  image: number | Media;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * Partners we collaborate with — rendered on /about.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -190,6 +412,34 @@ export interface Partner {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * Submissions from the website contact form.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact-submissions".
+ */
+export interface ContactSubmission {
+  id: number;
+  name: string;
+  email: string;
+  message: string;
+  /**
+   * What they need help with.
+   */
+  help?: string | null;
+  branch?: string | null;
+  scope?: string | null;
+  goal?: string | null;
+  pain?: string | null;
+  otherContext?: string | null;
+  timeline?: string | null;
+  budget?: string | null;
+  emailStatus?: ('pending' | 'sent' | 'failed') | null;
+  emailError?: string | null;
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -224,8 +474,32 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'services';
+        value: number | Service;
+      } | null)
+    | ({
+        relationTo: 'projects';
+        value: number | Project;
+      } | null)
+    | ({
+        relationTo: 'brands';
+        value: number | Brand;
+      } | null)
+    | ({
         relationTo: 'partners';
         value: number | Partner;
+      } | null)
+    | ({
+        relationTo: 'contact-submissions';
+        value: number | ContactSubmission;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -309,6 +583,102 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  blurb?: T;
+  icon?: T;
+  displayOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  label?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "services_select".
+ */
+export interface ServicesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  category?: T;
+  flagship?: T;
+  icon?: T;
+  tags?: T;
+  summary?: T;
+  description?: T;
+  prices?:
+    | T
+    | {
+        label?: T;
+        amount?: T;
+        suffix?: T;
+        note?: T;
+        id?: T;
+      };
+  inclusions?:
+    | T
+    | {
+        item?: T;
+        id?: T;
+      };
+  exclusions?:
+    | T
+    | {
+        item?: T;
+        id?: T;
+      };
+  displayOrder?: T;
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "projects_select".
+ */
+export interface ProjectsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  summary?: T;
+  url?: T;
+  repoUrl?: T;
+  client?: T;
+  cover?: T;
+  tags?: T;
+  description?: T;
+  featured?: T;
+  displayOrder?: T;
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands_select".
+ */
+export interface BrandsSelect<T extends boolean = true> {
+  name?: T;
+  domain?: T;
+  image?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "partners_select".
  */
 export interface PartnersSelect<T extends boolean = true> {
@@ -321,6 +691,28 @@ export interface PartnersSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact-submissions_select".
+ */
+export interface ContactSubmissionsSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  message?: T;
+  help?: T;
+  branch?: T;
+  scope?: T;
+  goal?: T;
+  pain?: T;
+  otherContext?: T;
+  timeline?: T;
+  budget?: T;
+  emailStatus?: T;
+  emailError?: T;
+  userAgent?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -361,6 +753,74 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rate-card-settings".
+ */
+export interface RateCardSetting {
+  id: number;
+  taxNote?: string | null;
+  currency?: ('INR' | 'USD') | null;
+  footerDisclaimer?: string | null;
+  contactCta?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Sender identity and recipient lists for outbound and form-notification emails.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-settings".
+ */
+export interface EmailSetting {
+  id: number;
+  fromName: string;
+  /**
+   * Must be on a domain verified in Resend. Used as the default From for forgot-password and notification emails.
+   */
+  fromEmail: string;
+  /**
+   * Emails that receive a notification when the website contact form is submitted.
+   */
+  contactRecipients?:
+    | {
+        email: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rate-card-settings_select".
+ */
+export interface RateCardSettingsSelect<T extends boolean = true> {
+  taxNote?: T;
+  currency?: T;
+  footerDisclaimer?: T;
+  contactCta?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-settings_select".
+ */
+export interface EmailSettingsSelect<T extends boolean = true> {
+  fromName?: T;
+  fromEmail?: T;
+  contactRecipients?:
+    | T
+    | {
+        email?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

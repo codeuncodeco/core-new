@@ -285,8 +285,8 @@ Batches in order:
 - [x] Phase 0 — Scaffolding + CF resources (D1 + R2 provisioned, repo skeleton in).
 - [x] Phase 1 — CMS foundation scaffolded: Partners collection with drafts + livePreview + breakpoints, Users cookie-scoped for prod, seed/wipe routes with `?only=` filter, `push` gated on NODE_ENV, wrangler points at beta D1/R2.
 - [x] Phase 2 — Web foundation scaffolded: Astro + @astrojs/cloudflare adapter, `/preview/about` SSR with cookie forwarding + POST-body merge, shared `live-preview.ts` bridge (`ready()` + POST-back + body swap), `.assetsignore` + `main` for Workers deploy.
-- [ ] Phase 3 — Beta deploy + infra validation.
-- [ ] Phase 4 — Remaining collections with drafts.
+- [ ] Phase 3 — Beta deploy + infra validation (migrations auto-applying on deploy; admin signup + partners seed + live preview smoke test remaining).
+- [x] Phase 4 — Remaining collections scaffolded: Categories, Tags, Services (drafts), Projects (drafts), Brands (drafts), ContactSubmissions, Globals (RateCard + Email). Seed + wipe routes cover everything. Migration to generate + apply next.
 - [ ] Phase 5 — Remaining web pages + preview routes.
 - [ ] Phase 6 — Content cutover.
 

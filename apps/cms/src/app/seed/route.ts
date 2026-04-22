@@ -1,15 +1,18 @@
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import type { CollectionSlug } from 'payload'
+import { allSeedServices } from '../../seed/services-data'
+import { allSeedCategories } from '../../seed/categories-data'
+import { allSeedTags } from '../../seed/tags-data'
+import { allSeedProjects } from '../../seed/projects-data'
 import { allSeedPartners } from '../../seed/partners-data'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
 type AnyPayload = Awaited<ReturnType<typeof getPayload>>
 
-// Replace all docs of a collection with the provided list. `draft: false`
-// forces published status on drafts-enabled collections so seed data lands
-// as live (not sitting in the draft version table).
+// Replace all docs of a collection with the provided list.
+// Callers pass (data, buildDoc) where buildDoc may be async (to resolve refs).
 const replaceAll = async <T>(
   payload: AnyPayload,
   collection: CollectionSlug,
@@ -27,13 +30,15 @@ const replaceAll = async <T>(
   const createdSlugs: string[] = []
   for (const item of data) {
     const body = await buildDoc(item)
+    // draft: false forces published status on collections with versions.drafts
+    // enabled (Partners, and more to come). No-op for non-versioned collections.
     const doc = await payload.create({ collection, data: body, overrideAccess: true, draft: false })
     createdSlugs.push((doc as { slug?: string }).slug ?? String((doc as { id: string | number }).id))
   }
   return createdSlugs
 }
 
-const KNOWN_TARGETS = ['partners'] as const
+const KNOWN_TARGETS = ['categories', 'tags', 'services', 'projects', 'partners', 'rate-card'] as const
 type Target = (typeof KNOWN_TARGETS)[number]
 
 const runSeed = async (request: Request) => {
@@ -55,6 +60,20 @@ const runSeed = async (request: Request) => {
       )
     }
     only = new Set(requested as Target[])
+
+    // Services/Categories/Tags are interdependent — must be seeded together or not at all,
+    // since Services references Categories + Tags and replaceAll wipes before reseeding.
+    const trio = ['services', 'categories', 'tags'] as const
+    const touchedTrio = trio.filter((t) => only!.has(t))
+    if (touchedTrio.length > 0 && touchedTrio.length < trio.length) {
+      return Response.json(
+        {
+          error:
+            'services, categories, and tags must be seeded together (they have relational dependencies). Include all three in ?only= or omit the filter for a full seed.',
+        },
+        { status: 400 },
+      )
+    }
   }
   const shouldRun = (target: Target) => !only || only.has(target)
 
@@ -62,6 +81,87 @@ const runSeed = async (request: Request) => {
 
   const result: Record<string, unknown> = { ok: true, ran: [] as string[] }
   const ran = result.ran as string[]
+
+  // 1) Services reference Categories + Tags, so wipe Services first so we can safely
+  //    wipe + reseed Categories + Tags without tripping the "block delete if referenced" hook.
+  if (shouldRun('services')) {
+    await replaceAll(payload, 'services', [], () => ({}))
+  }
+
+  if (shouldRun('categories')) {
+    const categoriesCreated = await replaceAll(payload, 'categories', allSeedCategories, (c) => ({
+      slug: c.slug,
+      title: c.title,
+      blurb: c.blurb,
+      icon: c.icon,
+      displayOrder: c.displayOrder,
+    }))
+    result.categoriesCreated = categoriesCreated.length
+    result.categories = categoriesCreated
+    ran.push('categories')
+  }
+
+  if (shouldRun('tags')) {
+    const tagsCreated = await replaceAll(payload, 'tags', allSeedTags, (t) => ({
+      slug: t.slug,
+      label: t.label,
+    }))
+    result.tagsCreated = tagsCreated.length
+    result.tags = tagsCreated
+    ran.push('tags')
+  }
+
+  if (shouldRun('services')) {
+    // Resolve category + tag slugs to ids against whatever is currently in the DB
+    // (may have just been reseeded, may have been present from a prior run).
+    const catDocs = await payload.find({ collection: 'categories', limit: 1000, depth: 0 })
+    const catIdBySlug = new Map<string, number>(
+      catDocs.docs.map((d) => [(d as { slug: string }).slug, (d as { id: number }).id]),
+    )
+    const tagDocs = await payload.find({ collection: 'tags', limit: 1000, depth: 0 })
+    const tagIdBySlug = new Map<string, number>(
+      tagDocs.docs.map((d) => [(d as { slug: string }).slug, (d as { id: number }).id]),
+    )
+
+    const servicesCreated: string[] = []
+    for (const svc of allSeedServices) {
+      const categoryId = catIdBySlug.get(svc.categorySlug)
+      if (!categoryId) {
+        throw new Error(`Service "${svc.slug}" references unknown category "${svc.categorySlug}".`)
+      }
+      const tagIds = (svc.tagSlugs ?? []).map((tagSlug) => {
+        const id = tagIdBySlug.get(tagSlug)
+        if (!id) {
+          throw new Error(`Service "${svc.slug}" references unknown tag "${tagSlug}".`)
+        }
+        return id
+      })
+
+      const { categorySlug: _cs, tagSlugs: _ts, ...rest } = svc
+      const doc = await payload.create({
+        collection: 'services',
+        data: { ...rest, category: categoryId, tags: tagIds },
+        overrideAccess: true,
+        draft: false,
+      })
+      servicesCreated.push((doc as { slug: string }).slug)
+    }
+    result.servicesCreated = servicesCreated.length
+    result.services = servicesCreated
+    ran.push('services')
+  }
+
+  if (shouldRun('projects')) {
+    const projectsCreated = await replaceAll(
+      payload,
+      'projects',
+      allSeedProjects,
+      (p) => p as unknown as Record<string, unknown>,
+    )
+    result.projectsCreated = projectsCreated.length
+    result.projects = projectsCreated
+    ran.push('projects')
+  }
 
   if (shouldRun('partners')) {
     const partnersCreated = await replaceAll(payload, 'partners', allSeedPartners, (p) => ({
@@ -74,6 +174,18 @@ const runSeed = async (request: Request) => {
     result.partnersCreated = partnersCreated.length
     result.partners = partnersCreated
     ran.push('partners')
+  }
+
+  if (shouldRun('rate-card')) {
+    await payload.updateGlobal({
+      slug: 'rate-card-settings',
+      data: { taxNote: 'Plus GST', currency: 'INR' },
+    })
+    ran.push('rate-card')
+  }
+
+  result.notes = {
+    brands: 'Not seeded — Brands.image is a required upload. Add brands via admin UI.',
   }
 
   return Response.json(result)

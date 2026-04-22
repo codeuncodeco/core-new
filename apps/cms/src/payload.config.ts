@@ -10,7 +10,15 @@ import { r2Storage } from '@payloadcms/storage-r2'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { Categories } from './collections/Categories'
+import { Tags } from './collections/Tags'
+import { Services } from './collections/Services'
+import { Projects } from './collections/Projects'
+import { Brands } from './collections/Brands'
 import { Partners } from './collections/Partners'
+import { ContactSubmissions } from './collections/ContactSubmissions'
+import { RateCardSettings } from './globals/RateCardSettings'
+import { EmailSettings } from './globals/EmailSettings'
 import { resendAdapter } from './email/resend'
 
 const filename = fileURLToPath(import.meta.url)
@@ -53,7 +61,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Partners],
+  collections: [Users, Media, Categories, Tags, Services, Projects, Brands, Partners, ContactSubmissions],
+  globals: [RateCardSettings, EmailSettings],
   email: resendAdapter(),
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
