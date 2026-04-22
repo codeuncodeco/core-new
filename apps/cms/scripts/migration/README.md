@@ -7,9 +7,13 @@ Plan (context): [`docs/content-migration.md`](../../../../docs/content-migration
 
 ## What gets migrated
 
-- **Collections:** categories, tags, services, projects, brands, partners.
+- **Collections:** categories, tags, services, projects, brands.
 - **Globals:** rate-card-settings, email-settings.
 - **Media:** every file + its Payload Media doc (alt, filename, mimeType preserved).
+
+**Not exported from old-core:** partners — the collection wasn't deployed to
+old-core prod. After import, seed the default 4 partners on new-core with
+`curl "https://cms-beta.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"`.
 
 ## What doesn't
 

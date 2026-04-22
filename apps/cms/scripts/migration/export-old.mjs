@@ -48,7 +48,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const log = (...a) => console.log('[export]', ...a)
 const note = (...a) => console.log('         ', ...a)
 
-const COLLECTIONS = ['categories', 'tags', 'services', 'projects', 'brands', 'partners']
+// Partners intentionally omitted — not deployed to old-core prod yet.
+// Partners in new-core can be seeded via /seed?only=partners after import.
+const COLLECTIONS = ['categories', 'tags', 'services', 'projects', 'brands']
 const GLOBALS = ['rate-card-settings', 'email-settings']
 
 const shouldRun = (name) => !ONLY || ONLY.has(name)
