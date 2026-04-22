@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "cu-core-beta",
+  "name": "cu-core",
   "compatibility_date": "2025-08-15",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -11,31 +11,16 @@
   "observability": {
     "enabled": true
   },
-  // Top-level = beta — the single pre-cutover deploy target for new-core.
-  // Deploy with a plain `wrangler deploy` (no --env flag). At Phase 6 we add
-  // env.production and swap to `cu-core` + cms.codeuncode.com.
-  "vars": {
-    "WEB_URL": "https://beta.codeuncode.com"
-  },
-  "routes": [{ "pattern": "cms-beta.codeuncode.com", "custom_domain": true }],
-  "d1_databases": [
-    {
-      "binding": "D1",
-      "database_name": "cu-core-staging",
-      "database_id": "65355fa8-c96f-4ff0-9bd6-48a1861ac3f7"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "R2",
-      "bucket_name": "cu-core-staging"
-    }
-  ],
+  "services": [],
+  // Top-level has no bindings by design (washi pattern). Every deploy must
+  // pick an env explicitly with --env=<name>. That way, forgetting to set
+  // CLOUDFLARE_ENV fails loudly instead of silently hitting a default.
   "env": {
     // Local dev. `pnpm dev` sets CLOUDFLARE_ENV=local so getPlatformProxy
-    // reads this block. No `remote: true` anywhere → miniflare emulates
-    // both D1 and R2 on disk under .wrangler/state/.
+    // reads this block. No `remote: true` → miniflare emulates D1 + R2 on
+    // disk under .wrangler/state/.
     "local": {
+      "services": [],
       "vars": {
         "WEB_URL": "http://localhost:4321"
       },
@@ -52,7 +37,36 @@
           "bucket_name": "cu-core-local"
         }
       ]
+    },
+    // Pre-cutover public env. Deploys with `--env=beta`. At Phase 6 we
+    // add env.production claiming the `cu-core` worker name +
+    // cms.codeuncode.com route from old-core.
+    "beta": {
+      "name": "cu-core-beta",
+      "services": [],
+      "routes": [{ "pattern": "cms-beta.codeuncode.com", "custom_domain": true }],
+      "vars": {
+        "WEB_URL": "https://beta.codeuncode.com"
+      },
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_name": "cu-core-staging",
+          "database_id": "65355fa8-c96f-4ff0-9bd6-48a1861ac3f7",
+          "remote": true
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "cu-core-staging",
+          "preview_bucket_name": "cu-core-staging",
+          "remote": true
+        }
+      ],
+      "observability": {
+        "enabled": true
+      }
     }
   }
-  // env.production intentionally absent until Phase 6 cutover.
 }
