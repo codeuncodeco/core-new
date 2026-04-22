@@ -25,7 +25,17 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 const realpath = (value: string) => (fs.existsSync(value) ? fs.realpathSync(value) : undefined)
 
-const isCLI = process.argv.some((value) => realpath(value).endsWith(path.join('payload', 'bin.js')))
+// Matches the `payload` bin, and any script run from scripts/migration/* via
+// tsx — both need the wrangler platform proxy (with remote bindings in
+// production) instead of OpenNext's Next.js-only Cloudflare context.
+const isCLI = process.argv.some((value) => {
+  const rp = realpath(value)
+  if (!rp) return false
+  return (
+    rp.endsWith(path.join('payload', 'bin.js')) ||
+    rp.includes(path.join('scripts', 'migration'))
+  )
+})
 const isProduction = process.env.NODE_ENV === 'production'
 
 const createLog =
