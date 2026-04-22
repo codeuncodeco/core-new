@@ -125,9 +125,15 @@ async function importMedia(payload: Payload) {
       continue
     }
     const filePath = path.join(IN, 'media/files', m.filename)
-    let data: Buffer
+    let data: Uint8Array
     try {
-      data = await fs.readFile(filePath)
+      const raw = await fs.readFile(filePath)
+      // fs.readFile returns a Buffer which may be a view into Node's shared
+      // buffer pool. Miniflare's R2 proxy serializer (devalue) can't handle
+      // views into pooled ArrayBuffers and throws an assertion. Copy to a
+      // fresh Uint8Array that owns its memory.
+      data = new Uint8Array(raw.byteLength)
+      data.set(raw)
     } catch {
       note(`skip ${m.filename}: file not in export`)
       continue
