@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "pnpm run migrate:prod && cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build",
-    "build:cf": "pnpm run migrate:prod && cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" opennextjs-cloudflare build --env=$CLOUDFLARE_ENV",
-    "deploy": "pnpm run build:cf && opennextjs-cloudflare deploy --env=$CLOUDFLARE_ENV",
+    "deploy": "pnpm run deploy:database && pnpm run deploy:app",
+    "deploy:app": "opennextjs-cloudflare build --env=$CLOUDFLARE_ENV && opennextjs-cloudflare deploy --env=$CLOUDFLARE_ENV",
+    "deploy:database": "cross-env NODE_ENV=production PAYLOAD_SECRET=ignore CLOUDFLARE_ENV=$CLOUDFLARE_ENV payload migrate && wrangler d1 execute D1 --command 'PRAGMA optimize' --env=$CLOUDFLARE_ENV --remote",
     "dev": "cross-env CLOUDFLARE_ENV=local NODE_OPTIONS=--no-deprecation next dev",
     "devsafe": "rm -rf .next && rm -rf .open-next && cross-env CLOUDFLARE_ENV=local NODE_OPTIONS=--no-deprecation next dev",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
@@ -16,7 +17,7 @@
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "migrate": "cross-env CLOUDFLARE_ENV=local NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env CLOUDFLARE_ENV=local NODE_OPTIONS=--no-deprecation payload migrate:create",
-    "migrate:prod": "cross-env NODE_ENV=production PAYLOAD_SECRET=ignore NODE_OPTIONS=--no-deprecation payload migrate --disable-confirm",
+    "migrate:prod": "cross-env NODE_OPTIONS=--no-deprecation payload migrate --disable-confirm",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview --env=$CLOUDFLARE_ENV",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
