@@ -1,4 +1,4 @@
-import type { Service, Project, RateCardSetting, Category, Tag, Brand, Partner } from "@cms/payload-types";
+import type { Service, Project, RateCardSetting, Category, Tag, Brand, Partner, Media } from "@cms/payload-types";
 
 export type ServiceWithRefs = Omit<Service, "category" | "tags"> & {
   category: Category;
@@ -214,6 +214,24 @@ export const getPublishedProjectsPreview = async (cookie: string | null): Promis
     emptyList<Project>(),
   );
   return data.docs;
+};
+
+// Used by preview routes to hydrate relationship IDs (e.g. Project.cover) that
+// Payload's Live Preview postMessage delivers as bare numbers.
+export const getMediaById = async (
+  id: number,
+  cookie: string | null,
+): Promise<Media | null> => {
+  try {
+    const res = await fetch(`${CMS_URL}/api/media/${id}?depth=0`, {
+      headers: cookie ? { cookie } : {},
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as Media;
+  } catch (err) {
+    if (isCmsDown(err)) return null;
+    throw err;
+  }
 };
 
 export const getBrands = async (): Promise<Brand[]> => {

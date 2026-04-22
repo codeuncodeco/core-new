@@ -6,7 +6,7 @@ import {
   getCategories,
   resolveRef,
 } from "../lib/cms";
-import type { Category, Service, Tag } from "@cms/payload-types";
+import type { Category, Service } from "@cms/payload-types";
 import type { IconName } from "@cms/shared/icons";
 import { formatAmount } from "../lib/format";
 
@@ -29,7 +29,6 @@ type Row = {
   service: (typeof services)[number];
   category: Category;
   icon: IconName;
-  tags: Tag[];
   from: { amount: number; suffix?: string } | null;
 };
 
@@ -50,8 +49,7 @@ const startingAt = (
 const rows: Row[] = services.map((service) => {
   const category = resolveRef<Category>(service.category);
   const icon = (service.icon ?? category.icon) as IconName;
-  const tags = (service.tags ?? []).map((t) => resolveRef<Tag>(t));
-  return { service, category, icon, tags, from: startingAt(service.prices) };
+  return { service, category, icon, from: startingAt(service.prices) };
 });
 
 const grouped = new Map<string, Row[]>();

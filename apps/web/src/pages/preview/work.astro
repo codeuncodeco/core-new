@@ -5,24 +5,39 @@ export const prerender = false;
 
 import Base from "../../layouts/Base.astro";
 import ProjectCard from "../../components/ProjectCard.astro";
-import { getPublishedProjectsPreview } from "../../lib/cms";
+import { getPublishedProjectsPreview, getMediaById } from "../../lib/cms";
 import type { Project } from "@cms/payload-types";
 
 const cookie = Astro.request.headers.get("cookie");
 let projects = await getPublishedProjectsPreview(cookie);
 
-// Merge live-preview POST body into the list by id.
+// Payload's Live Preview postMessage sends form state with relationship
+// fields as bare IDs. Rehydrate `cover` so ProjectCard sees a Media object.
+const hydrateCover = async (
+  incoming: Partial<Project>,
+  existing: Project | undefined,
+): Promise<Partial<Project>> => {
+  if (typeof incoming.cover !== "number") return incoming;
+  const prev = existing?.cover;
+  if (prev && typeof prev === "object" && prev.id === incoming.cover) {
+    return { ...incoming, cover: prev };
+  }
+  const media = await getMediaById(incoming.cover, cookie);
+  return media ? { ...incoming, cover: media } : incoming;
+};
+
 if (Astro.request.method === "POST") {
   const incoming = (await Astro.request.json()) as
     | (Partial<Project> & { id?: number })
     | null;
   if (incoming?.id) {
     const idx = projects.findIndex((p) => p.id === incoming.id);
+    const hydrated = await hydrateCover(incoming, projects[idx]);
     if (idx >= 0) {
       projects = projects.slice();
-      projects[idx] = { ...projects[idx], ...(incoming as Project) };
+      projects[idx] = { ...projects[idx], ...(hydrated as Project) };
     } else {
-      projects = [...projects, incoming as Project];
+      projects = [...projects, hydrated as Project];
     }
   }
 }

@@ -5,24 +5,41 @@ export const prerender = false;
 
 import Base from "../../layouts/Base.astro";
 import ServicesMenu from "../../components/ServicesMenu.astro";
-import { getPublishedServicesPreview } from "../../lib/cms";
-import type { Service } from "@cms/payload-types";
+import { getPublishedServicesPreview, getCategories } from "../../lib/cms";
+import type { Category, Service } from "@cms/payload-types";
 
 const cookie = Astro.request.headers.get("cookie");
 let services = await getPublishedServicesPreview(cookie);
 
-// Merge live-preview POST body into the list by id.
+// Payload's Live Preview postMessage sends form state with relationship
+// fields as bare IDs (no depth expansion). Rehydrate `category` so downstream
+// components can treat it as a populated object like the initial SSR fetch.
+const hydrateCategory = async (
+  incoming: Partial<Service>,
+  existing: Service | undefined,
+): Promise<Partial<Service>> => {
+  if (typeof incoming.category !== "number") return incoming;
+  const prev = existing?.category;
+  if (prev && typeof prev === "object" && prev.id === incoming.category) {
+    return { ...incoming, category: prev };
+  }
+  const categories = await getCategories();
+  const match = categories.find((c) => c.id === incoming.category);
+  return match ? { ...incoming, category: match as Category } : incoming;
+};
+
 if (Astro.request.method === "POST") {
   const incoming = (await Astro.request.json()) as
     | (Partial<Service> & { id?: number })
     | null;
   if (incoming?.id) {
     const idx = services.findIndex((s) => s.id === incoming.id);
+    const hydrated = await hydrateCategory(incoming, services[idx]);
     if (idx >= 0) {
       services = services.slice();
-      services[idx] = { ...services[idx], ...(incoming as Service) };
+      services[idx] = { ...services[idx], ...(hydrated as Service) };
     } else {
-      services = [...services, incoming as Service];
+      services = [...services, hydrated as Service];
     }
   }
 }
