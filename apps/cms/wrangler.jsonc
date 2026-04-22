@@ -23,7 +23,8 @@
     "local": {
       "services": [],
       "vars": {
-        "WEB_URL": "http://localhost:4321"
+        "WEB_URL": "http://localhost:4321",
+        "CMS_URL": "http://localhost:3000"
       },
       "d1_databases": [
         {
@@ -47,7 +48,8 @@
       "services": [],
       "routes": [{ "pattern": "cms-beta.codeuncode.com", "custom_domain": true }],
       "vars": {
-        "WEB_URL": "https://beta.codeuncode.com"
+        "WEB_URL": "https://beta.codeuncode.com",
+        "CMS_URL": "https://cms-beta.codeuncode.com"
       },
       "d1_databases": [
         {

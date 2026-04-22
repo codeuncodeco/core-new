@@ -65,6 +65,11 @@ const cloudflare =
     : await getCloudflareContext({ async: true })
 
 export default buildConfig({
+  // Absolute base for admin URLs in system emails (reset password, verify).
+  // Without this, Payload falls back to req.host only when it's in the
+  // CORS/CSRF allowlist — otherwise emits path-only URLs that mail clients
+  // mangle into `https://admin/reset/<token>`.
+  serverURL: process.env.CMS_URL || 'http://localhost:3000',
   admin: {
     user: Users.slug,
     importMap: {
