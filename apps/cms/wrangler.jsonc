@@ -11,6 +11,15 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS",
   },
+  // Keeps local wrangler config in sync with remote. observability.logs is
+  // currently disabled at the CF dashboard level; flip `enabled` to true
+  // here (and in dashboard) when we want request logs.
+  "observability": {
+    "logs": {
+      "enabled": false,
+      "invocation_logs": true,
+    },
+  },
   // "beta" is the single pre-cutover deploy target for new-core. It's our
   // public-facing prod-until-cutover (pairs with the web app at
   // beta.codeuncode.com). At Phase 6 we swap to `cu-core` + cms.codeuncode.com

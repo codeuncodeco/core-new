@@ -14,6 +14,14 @@
     "not_found_handling": "404-page",
     "binding": "ASSETS",
   },
+  // Keeps local wrangler config in sync with remote. Flip `enabled` to true
+  // here (and in dashboard) when we want request logs.
+  "observability": {
+    "logs": {
+      "enabled": false,
+      "invocation_logs": true,
+    },
+  },
   "vars": {
     "PUBLIC_CMS_URL": "https://cms-beta.codeuncode.com",
   },
