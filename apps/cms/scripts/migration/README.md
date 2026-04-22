@@ -5,6 +5,26 @@ beta CMS (`cms-beta.codeuncode.com`). Media files travel too.
 
 Plan (context): [`docs/content-migration.md`](../../../../docs/content-migration.md).
 
+## TL;DR
+
+```sh
+cd apps/cms
+
+# 1. Export from old prod → migration/export/ at repo root
+pnpm run migration:export
+
+# 2. (optional) Rehearse against local miniflare first
+pnpm run migration:import:local
+
+# 3. Import into beta remote
+pnpm run migration:import:beta
+
+# 4. Verify
+curl -s "https://cms-beta.codeuncode.com/api/services?limit=0" | jq .totalDocs
+```
+
+Detailed steps + flags + gotchas follow below.
+
 ## What gets migrated
 
 - **Collections:** categories, tags, services, projects, brands.
