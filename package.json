@@ -4,7 +4,8 @@
   "scripts": {
     "dev:cms": "pnpm --filter cu-core dev",
     "dev:web": "pnpm --filter cu-web dev",
-    "build:web": "pnpm --filter cu-web build"
+    "build:web": "pnpm --filter cu-web build",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
