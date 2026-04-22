@@ -4,7 +4,7 @@
   "compatibility_date": "2026-01-01",
   "compatibility_flags": [
     // Required by @astrojs/cloudflare for the SSR worker.
-    "nodejs_compat",
+    "nodejs_compat"
   ],
   // Astro's cloudflare adapter emits the SSR worker at this path. Without
   // `main`, wrangler would deploy as pure static assets and /preview/* would 404.
@@ -12,19 +12,16 @@
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page",
-    "binding": "ASSETS",
+    "binding": "ASSETS"
   },
-  // Keeps local wrangler config in sync with remote. Flip `enabled` to true
-  // here (and in dashboard) when we want request logs.
+  // Matches the remote worker's observability setting. Flip to true (and in
+  // dashboard) when we want request logs.
   "observability": {
-    "logs": {
-      "enabled": false,
-      "invocation_logs": true,
-    },
+    "enabled": false
   },
   "vars": {
-    "PUBLIC_CMS_URL": "https://cms-beta.codeuncode.com",
+    "PUBLIC_CMS_URL": "https://cms-beta.codeuncode.com"
   },
   // "beta" = new-core's pre-cutover public URL. Swaps to codeuncode.com at Phase 6.
-  "routes": [{ "pattern": "beta.codeuncode.com", "custom_domain": true }],
+  "routes": [{ "pattern": "beta.codeuncode.com", "custom_domain": true }]
 }
