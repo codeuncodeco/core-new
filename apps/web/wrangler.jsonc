@@ -14,6 +14,9 @@
     "not_found_handling": "404-page",
     "binding": "ASSETS",
   },
+  "vars": {
+    "PUBLIC_CMS_URL": "https://cms-beta.codeuncode.com",
+  },
   // "beta" = new-core's pre-cutover public URL. Swaps to codeuncode.com at Phase 6.
   "routes": [{ "pattern": "beta.codeuncode.com", "custom_domain": true }],
 }
