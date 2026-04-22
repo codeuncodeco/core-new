@@ -8,19 +8,12 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  // Logs on. Next deploy propagates this to the remote worker.
   "observability": {
-    "logs": {
-      "enabled": true,
-      "invocation_logs": true
-    }
+    "enabled": true
   },
-  // "beta" is the single pre-cutover deploy target for new-core. It's our
-  // public-facing prod-until-cutover (pairs with the web app at
-  // beta.codeuncode.com). At Phase 6 we swap to `cu-core` + cms.codeuncode.com
-  // and retire old-core. Until then, deploy with a plain `wrangler deploy`.
-  //
-  // Local dev (`next dev`) uses miniflare for D1 + R2 — doesn't touch remote.
+  // Top-level = beta — the single pre-cutover deploy target for new-core.
+  // Deploy with a plain `wrangler deploy` (no --env flag). At Phase 6 we add
+  // env.production and swap to `cu-core` + cms.codeuncode.com.
   "vars": {
     "WEB_URL": "https://beta.codeuncode.com"
   },
@@ -37,7 +30,29 @@
       "binding": "R2",
       "bucket_name": "cu-core-staging"
     }
-  ]
-  // env.production intentionally absent until Phase 6 cutover. Adding it
-  // would claim `cu-core` + cms.codeuncode.com which old-core still owns.
+  ],
+  "env": {
+    // Local dev. `pnpm dev` sets CLOUDFLARE_ENV=local so getPlatformProxy
+    // reads this block. No `remote: true` anywhere → miniflare emulates
+    // both D1 and R2 on disk under .wrangler/state/.
+    "local": {
+      "vars": {
+        "WEB_URL": "http://localhost:4321"
+      },
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_name": "cu-core-local",
+          "database_id": "local-dev-db"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "cu-core-local"
+        }
+      ]
+    }
+  }
+  // env.production intentionally absent until Phase 6 cutover.
 }
