@@ -1,4 +1,9 @@
 #!/usr/bin/env tsx
+// Must come before any other import that pulls payload.config —
+// `getPayload({ config })` validates PAYLOAD_SECRET at init, which needs
+// the .env to be loaded before buildConfig runs.
+import 'dotenv/config'
+
 /**
  * Import content from the export dump into new-core.
  *
