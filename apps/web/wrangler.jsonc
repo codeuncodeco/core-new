@@ -14,10 +14,9 @@
     "not_found_handling": "404-page",
     "binding": "ASSETS"
   },
-  // Matches the remote worker's observability setting. Flip to true (and in
-  // dashboard) when we want request logs.
+  // Logs on. Next deploy propagates this to the remote worker.
   "observability": {
-    "enabled": false
+    "enabled": true
   },
   "vars": {
     "PUBLIC_CMS_URL": "https://cms-beta.codeuncode.com"

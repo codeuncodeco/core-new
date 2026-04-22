@@ -8,10 +8,9 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  // Matches the remote worker's observability setting. Flip to true (and in
-  // dashboard) when we want request logs.
+  // Logs on. Next deploy propagates this to the remote worker.
   "observability": {
-    "enabled": false
+    "enabled": true
   },
   // "beta" is the single pre-cutover deploy target for new-core. It's our
   // public-facing prod-until-cutover (pairs with the web app at
