@@ -1,0 +1,110 @@
+---
+type Props = {
+  id: string;
+  title?: string;
+  labelledby?: string;
+};
+
+const { id, title, labelledby } = Astro.props;
+const titleId = `${id}-title`;
+---
+
+<dialog id={id} class="modal" aria-labelledby={labelledby ?? titleId}>
+  <div class="modal__inner">
+    <header class="modal__header">
+      {title && <h2 id={titleId} class="modal__title">{title}</h2>}
+      <button
+        type="button"
+        class="modal__close"
+        data-modal-close
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </header>
+    <div class="modal__body">
+      <slot />
+    </div>
+  </div>
+</dialog>
+
+<style is:global>
+  .modal {
+    padding: 0;
+    border: 1px solid var(--modal-border, currentColor);
+    background: var(--modal-bg, #fff);
+    color: var(--modal-fg, #171717);
+    width: min(40rem, calc(100vw - 2rem));
+    max-width: none;
+    max-height: 85vh;
+    margin: auto;
+    inset: 0;
+    font: inherit;
+    border-radius: 8px;
+  }
+  .modal::backdrop {
+    background: var(--modal-backdrop, rgba(0, 0, 0, 0.55));
+  }
+  .modal__inner {
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+  }
+  .modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--modal-border, currentColor);
+  }
+  .modal__title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+  .modal__close {
+    background: transparent;
+    color: inherit;
+    border: 0;
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.25rem;
+  }
+  .modal__body {
+    padding: 1.25rem;
+    overflow-y: auto;
+  }
+</style>
+
+<script>
+  document.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    const opener = target.closest("[data-modal-open]") as HTMLElement | null;
+    if (opener) {
+      const id = opener.getAttribute("data-modal-open");
+      if (id) {
+        const dlg = document.getElementById(id) as HTMLDialogElement | null;
+        dlg?.showModal();
+      }
+      return;
+    }
+    const closer = target.closest("[data-modal-close]") as HTMLElement | null;
+    if (closer) {
+      const dlg = closer.closest("dialog") as HTMLDialogElement | null;
+      dlg?.close();
+      return;
+    }
+    const dlg = target as HTMLDialogElement;
+    if (dlg.tagName === "DIALOG" && dlg.open) {
+      const rect = dlg.getBoundingClientRect();
+      const inside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+      if (!inside) dlg.close();
+    }
+  });
+</script>

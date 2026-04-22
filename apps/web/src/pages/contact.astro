@@ -1,0 +1,79 @@
+---
+import Base from "../layouts/Base.astro";
+import ContactWizard from "../components/ContactWizard.astro";
+import ContactPreview from "../components/ContactPreview.astro";
+import { getCategories } from "../lib/cms";
+
+// Category slug → wizard branch bucket. If a CMS category slug isn't here,
+// we default to "build" — safe, most common.
+const categoryToBucket: Record<string, string> = {
+  design: "build",
+  development: "build",
+  ops: "maint",
+  marketing: "perf",
+};
+
+const categories = await getCategories();
+
+const helpOptions = [
+  ...categories.map((c) => ({
+    value: c.title,
+    slug: c.slug,
+    bucket: categoryToBucket[c.slug] ?? "build",
+  })),
+  { value: "Something else", slug: "other", bucket: "other" },
+];
+---
+
+<Base title="Contact - Code Uncode">
+  <section class="mb-12">
+    <h1 class="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+      Let's build something
+    </h1>
+    <p class="mt-6 max-w-2xl text-xl text-[var(--color-muted)]">
+      Five quick questions!
+    </p>
+  </section>
+
+  <div class="contact-grid">
+    <div
+      class="contact-grid__form"
+      style="--wiz-border: var(--color-border); --wiz-hover: var(--color-surface); --wiz-fill: var(--color-accent); --wiz-fill-fg: #000; --wiz-track: var(--color-surface);"
+    >
+      <ContactWizard helpOptions={helpOptions} />
+    </div>
+    <div class="contact-grid__preview">
+      <ContactPreview />
+    </div>
+  </div>
+
+  <p class="mt-12 text-base text-[var(--color-muted)]">
+    Or drop a line at
+    <a
+      href="mailto:hello@codeuncode.com"
+      class="underline decoration-[var(--color-accent)] decoration-4 underline-offset-4"
+      >hello@codeuncode.com</a
+    >.
+  </p>
+
+  <style>
+    .contact-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.25rem;
+    }
+    /* Mobile: wizard only. Preview is desktop-only. */
+    @media (max-width: 899px) {
+      .contact-grid__preview {
+        display: none;
+      }
+    }
+    @media (min-width: 900px) {
+      .contact-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(20rem, 22rem);
+        gap: 2.5rem;
+        align-items: start;
+      }
+    }
+  </style>
+</Base>

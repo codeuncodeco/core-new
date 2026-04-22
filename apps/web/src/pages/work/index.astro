@@ -1,0 +1,49 @@
+---
+import Base from "../../layouts/Base.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
+import { getPublishedProjects } from "../../lib/cms";
+
+const projects = await getPublishedProjects();
+const featured = projects.filter((p) => p.featured);
+const rest = projects.filter((p) => !p.featured);
+---
+
+<Base title="Work - Code Uncode" description="Selected projects.">
+  <section class="mb-12">
+    <h1 class="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+      Selected work
+    </h1>
+  </section>
+
+  {
+    featured.length > 0 && (
+      <section class="mb-12 sm:mb-16">
+        <h2 class="mb-4 text-xs uppercase tracking-[0.2em] text-muted sm:mb-6 sm:text-xl">
+          Featured
+        </h2>
+        <div class="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+          {featured.map((project) => (
+            <ProjectCard project={project} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  {
+    rest.length > 0 && (
+      <section class="mb-12 sm:mb-16">
+        {featured.length > 0 && (
+          <h2 class="mb-4 text-xs uppercase tracking-[0.2em] text-muted sm:mb-6 sm:text-xl">
+            More
+          </h2>
+        )}
+        <div class="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+          {rest.map((project) => (
+            <ProjectCard project={project} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+</Base>

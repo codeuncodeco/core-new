@@ -1,0 +1,36 @@
+---
+import Base from "../layouts/Base.astro";
+import ServicesMenu from "../components/ServicesMenu.astro";
+---
+
+<Base title="Code Uncode - Web development, design and deployment">
+  <section class="mb-16">
+    <h1
+      class="mt-5 text-4xl md:text-5xl leading-[1.25] tracking-tight sm:text-6xl"
+    >
+      We design, build and maintain <span class="hero-mark"
+        >modern websites</span
+      > for people doing serious work
+    </h1>
+    <p class="mt-8 max-w-2xl text-base text-[var(--color-muted)]">
+      Fast, durably designed systems for people who think in years
+    </p>
+  </section>
+
+  <ServicesMenu />
+
+  <style>
+    .hero-mark {
+      font-family: var(--font-serif);
+      font-style: italic;
+      background: linear-gradient(
+        180deg,
+        transparent 62%,
+        var(--color-accent) 62%,
+        var(--color-accent) 94%,
+        transparent 94%
+      );
+      padding: 0 0.08em;
+    }
+  </style>
+</Base>

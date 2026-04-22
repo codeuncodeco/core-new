@@ -1,0 +1,100 @@
+---
+import Base from '../../layouts/Base.astro'
+import { getPublishedProjects, mediaUrl } from '../../lib/cms'
+import { getProjectFallback } from '../../lib/projectFallbacks'
+
+export async function getStaticPaths() {
+  const projects = await getPublishedProjects()
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }))
+}
+
+const { project } = Astro.props
+
+const cmsCover =
+  project.cover && typeof project.cover === 'object' ? project.cover : null
+const coverUrl = mediaUrl(cmsCover?.url) ?? getProjectFallback(project.slug)
+const coverAlt = cmsCover?.alt ?? project.title
+---
+
+<Base title={`${project.title} - Code Uncode`} description={project.summary ?? undefined}>
+  <article>
+    <a href="/work" class="text-base text-[var(--color-muted)] hover:text-[var(--color-fg)]">
+      ← All work
+    </a>
+
+    <header class="mt-6 mb-10 border-b border-[var(--color-border)] pb-8">
+      {project.client && (
+        <p class="mb-2 text-base uppercase tracking-[0.2em] text-[var(--color-muted)]">
+          {project.client}
+        </p>
+      )}
+      <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">
+        {project.title}
+      </h1>
+      {project.summary && (
+        <p class="mt-4 max-w-2xl text-xl text-[var(--color-muted)]">
+          {project.summary}
+        </p>
+      )}
+
+      <div class="mt-6 flex flex-wrap items-center gap-4">
+        {project.url && (
+          <a
+            href={project.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-block rounded-md bg-[var(--color-accent)] px-5 py-2 text-base font-semibold text-black hover:opacity-90"
+          >
+            Visit site ↗
+          </a>
+        )}
+        {project.repoUrl && (
+          <a
+            href={project.repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-base text-[var(--color-muted)] underline underline-offset-4 hover:text-[var(--color-fg)]"
+          >
+            Source ↗
+          </a>
+        )}
+      </div>
+
+      {project.tags && project.tags.length > 0 && (
+        <div class="mt-6 flex flex-wrap gap-2">
+          {project.tags.map((tag) => (
+            <span class="rounded-full border border-[var(--color-border)] px-2.5 py-0.5 text-xs uppercase tracking-wide text-[var(--color-muted)]">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </header>
+
+    {
+      coverUrl && (
+        <figure class="mb-12 overflow-hidden rounded-lg border border-[var(--color-border)]">
+          <img src={coverUrl} alt={coverAlt} class="w-full" loading="eager" />
+        </figure>
+      )
+    }
+
+    {/* TODO: render project.description (Lexical richText) once needed */}
+
+    <section class="mt-16 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-8">
+      <h2 class="text-2xl font-semibold tracking-tight">Like what you see?</h2>
+      <p class="mt-2 text-[var(--color-muted)]">
+        We're open to new projects. Reach out if you'd like to work together.
+      </p>
+      <a
+        href="/contact"
+        class="mt-5 inline-block rounded-md bg-[var(--color-accent)] px-5 py-3 text-base font-semibold text-black hover:opacity-90"
+      >
+        Get in touch
+      </a>
+    </section>
+  </article>
+</Base>

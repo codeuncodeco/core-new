@@ -1,0 +1,103 @@
+---
+// Light/dark mode toggle. The early-script in Base.astro sets the initial
+// data-theme before paint to avoid a flash.
+---
+
+<button
+  type="button"
+  class="theme-toggle"
+  data-theme-toggle
+  aria-label="Toggle light/dark mode"
+  title="Toggle light/dark"
+>
+  <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2" />
+    <path d="M12 20v2" />
+    <path d="m4.93 4.93 1.41 1.41" />
+    <path d="m17.66 17.66 1.41 1.41" />
+    <path d="M2 12h2" />
+    <path d="M20 12h2" />
+    <path d="m6.34 17.66-1.41 1.41" />
+    <path d="m19.07 4.93-1.41 1.41" />
+  </svg>
+  <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+  </svg>
+</button>
+
+<style>
+  .theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 200;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+    backdrop-filter: saturate(180%) blur(8px);
+    -webkit-backdrop-filter: saturate(180%) blur(8px);
+    color: var(--color-fg);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    cursor: pointer;
+    padding: 0;
+  }
+  .theme-toggle:hover {
+    border-color: var(--color-fg);
+  }
+  .theme-toggle__icon {
+    width: 18px;
+    height: 18px;
+    position: absolute;
+    transition:
+      opacity 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .theme-toggle__icon--moon {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.7);
+  }
+  .theme-toggle__icon--sun {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+  :root[data-theme="dark"] .theme-toggle__icon--sun {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.7);
+  }
+  :root[data-theme="dark"] .theme-toggle__icon--moon {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+</style>
+
+<script>
+  type Mode = "light" | "dark";
+
+  const apply = (mode: Mode) => {
+    document.documentElement.setAttribute("data-theme", mode);
+    try {
+      localStorage.setItem("cu-theme", mode);
+    } catch {}
+  };
+
+  const current = (): Mode => {
+    const set = document.documentElement.getAttribute("data-theme");
+    if (set === "light" || set === "dark") return set;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  };
+
+  document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]").forEach(
+    (btn) => {
+      btn.addEventListener("click", () => {
+        apply(current() === "dark" ? "light" : "dark");
+      });
+    },
+  );
+</script>

@@ -1,0 +1,72 @@
+---
+import type { Service } from '@cms/payload-types'
+import { formatAmount } from '../lib/format'
+
+type Props = {
+  prices: Service['prices']
+  currency?: string
+  compact?: boolean
+}
+
+const { prices, currency = 'INR', compact = false } = Astro.props
+---
+
+{
+  prices && prices.length === 1 && (
+    <div class="flex flex-wrap items-baseline gap-x-2 text-base">
+      <span class="tabnum whitespace-nowrap font-semibold">
+        {prices[0].note && !prices[0].note.toLowerCase().includes('up to') && !prices[0].suffix ? (
+          <span class="text-[var(--color-muted)] font-normal mr-1">
+            {prices[0].note}
+          </span>
+        ) : null}
+        {formatAmount(prices[0].amount, currency)}
+        {prices[0].suffix && (
+          <span class="ml-1 text-[var(--color-muted)] font-normal">
+            {prices[0].suffix}
+          </span>
+        )}
+      </span>
+      {!compact && prices[0].label && (
+        <span class="text-[var(--color-muted)]">{prices[0].label}</span>
+      )}
+      {!compact && prices[0].note && !(!prices[0].note.toLowerCase().includes('up to') && !prices[0].suffix) && (
+        <span class="text-[var(--color-muted)]">{prices[0].note}</span>
+      )}
+    </div>
+  )
+}
+
+{
+  prices && prices.length > 1 && (
+    <table class="w-full text-left text-base">
+      <tbody class="divide-y divide-[var(--color-border)]">
+        {prices.map((row) => (
+          <tr>
+            {!compact && (
+              <td class="py-2 pr-6 text-[var(--color-muted)]">
+                {row.label ?? ''}
+              </td>
+            )}
+            <td class="py-2 pr-6 tabnum whitespace-nowrap font-semibold">
+              {row.note && !row.note.toLowerCase().includes('up to') && !row.suffix ? (
+                <span class="text-[var(--color-muted)] font-normal mr-1">
+                  {row.note}
+                </span>
+              ) : null}
+              {formatAmount(row.amount, currency)}
+              {row.suffix && (
+                <span class="ml-1 text-[var(--color-muted)] font-normal">
+                  {row.suffix}
+                </span>
+              )}
+            </td>
+            {!compact && row.note && (
+              <td class="py-2 text-[var(--color-muted)]">{row.note}</td>
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}

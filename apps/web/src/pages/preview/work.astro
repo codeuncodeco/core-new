@@ -1,0 +1,84 @@
+---
+// SSR preview variant of /work — fetches draft Projects so editors can see
+// unpublished project edits before hitting publish.
+export const prerender = false;
+
+import Base from "../../layouts/Base.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
+import { getPublishedProjectsPreview } from "../../lib/cms";
+import type { Project } from "@cms/payload-types";
+
+const cookie = Astro.request.headers.get("cookie");
+let projects = await getPublishedProjectsPreview(cookie);
+
+// Merge live-preview POST body into the list by id.
+if (Astro.request.method === "POST") {
+  const incoming = (await Astro.request.json()) as
+    | (Partial<Project> & { id?: number })
+    | null;
+  if (incoming?.id) {
+    const idx = projects.findIndex((p) => p.id === incoming.id);
+    if (idx >= 0) {
+      projects = projects.slice();
+      projects[idx] = { ...projects[idx], ...(incoming as Project) };
+    } else {
+      projects = [...projects, incoming as Project];
+    }
+  }
+}
+
+const featured = projects.filter((p) => p.featured);
+const rest = projects.filter((p) => !p.featured);
+
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+Astro.response.headers.set(
+  "Content-Security-Policy",
+  "frame-ancestors 'self' https://cms-beta.codeuncode.com http://localhost:3000",
+);
+---
+
+<Base title="Work (preview) - Code Uncode" description="Selected projects.">
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+
+  <section class="mb-12">
+    <h1 class="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+      Selected work
+    </h1>
+  </section>
+
+  {
+    featured.length > 0 && (
+      <section class="mb-12 sm:mb-16">
+        <h2 class="mb-4 text-xs uppercase tracking-[0.2em] text-muted sm:mb-6 sm:text-xl">
+          Featured
+        </h2>
+        <div class="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+          {featured.map((project) => (
+            <ProjectCard project={project} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  {
+    rest.length > 0 && (
+      <section class="mb-12 sm:mb-16">
+        {featured.length > 0 && (
+          <h2 class="mb-4 text-xs uppercase tracking-[0.2em] text-muted sm:mb-6 sm:text-xl">
+            More
+          </h2>
+        )}
+        <div class="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+          {rest.map((project) => (
+            <ProjectCard project={project} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+</Base>
+
+<script>
+  import "../../scripts/live-preview";
+</script>

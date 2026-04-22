@@ -1,0 +1,30 @@
+---
+type Props = {
+  current: 'cards' | 'list'
+}
+
+const { current } = Astro.props
+
+const views = [
+  { key: 'list', label: 'List', href: '/services' },
+  { key: 'cards', label: 'Cards', href: '/services/cards' },
+] as const
+---
+
+<div class="mb-10 inline-flex rounded-md border border-[var(--color-border)] p-1 text-base">
+  {
+    views.map((v) => (
+      <a
+        href={v.href}
+        class:list={[
+          'rounded px-3 py-1 transition-colors',
+          current === v.key
+            ? 'bg-[var(--color-fg)] text-[var(--color-bg)]'
+            : 'text-[var(--color-muted)] hover:text-[var(--color-fg)]',
+        ]}
+      >
+        {v.label}
+      </a>
+    ))
+  }
+</div>

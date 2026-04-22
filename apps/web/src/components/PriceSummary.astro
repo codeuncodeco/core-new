@@ -1,0 +1,59 @@
+---
+import type { Service } from '@cms/payload-types'
+import { formatAmount } from '../lib/format'
+import { summarizePrices } from '../lib/prices'
+
+type Props = {
+  prices: Service['prices']
+  currency?: string
+  align?: 'left' | 'right'
+}
+
+const { prices, currency = 'INR', align = 'left' } = Astro.props
+const summary = summarizePrices(prices)
+const alignClass = align === 'right' ? 'sm:items-end' : ''
+---
+
+{
+  summary.kind === 'range' ? (
+    <div class:list={['tabnum whitespace-nowrap flex flex-col', alignClass]}>
+      <div>
+        <span class="text-2xl font-semibold">
+          {formatAmount(summary.min, currency)}
+        </span>
+        <span class="mx-1 text-[var(--color-muted)]">–</span>
+        <span class="text-2xl font-semibold">
+          {formatAmount(summary.max, currency)}
+        </span>
+      </div>
+      {summary.suffix && (
+        <span class="text-base text-[var(--color-muted)]">
+          {summary.suffix}
+        </span>
+      )}
+    </div>
+  ) : (
+    summary.rows.map((price) => (
+      <div class:list={['tabnum whitespace-nowrap flex flex-col', alignClass]}>
+        {price.label && (
+          <span class="text-base text-[var(--color-muted)]">{price.label}</span>
+        )}
+        <div>
+          {price.note && !price.suffix && (
+            <span class="mr-1 text-base text-[var(--color-muted)]">
+              {price.note}
+            </span>
+          )}
+          <span class="text-2xl font-semibold">
+            {formatAmount(price.amount, currency)}
+          </span>
+        </div>
+        {price.suffix && (
+          <span class="text-base text-[var(--color-muted)]">
+            {price.suffix}
+          </span>
+        )}
+      </div>
+    ))
+  )
+}

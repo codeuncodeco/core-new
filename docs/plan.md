@@ -286,8 +286,8 @@ Batches in order:
 - [x] Phase 1 — CMS foundation scaffolded: Partners collection with drafts + livePreview + breakpoints, Users cookie-scoped for prod, seed/wipe routes with `?only=` filter, `push` gated on NODE_ENV, wrangler points at beta D1/R2.
 - [x] Phase 2 — Web foundation scaffolded: Astro + @astrojs/cloudflare adapter, `/preview/about` SSR with cookie forwarding + POST-body merge, shared `live-preview.ts` bridge (`ready()` + POST-back + body swap), `.assetsignore` + `main` for Workers deploy.
 - [ ] Phase 3 — Beta deploy + infra validation (migrations auto-applying on deploy; admin signup + partners seed + live preview smoke test remaining).
-- [x] Phase 4 — Remaining collections scaffolded: Categories, Tags, Services (drafts), Projects (drafts), Brands (drafts), ContactSubmissions, Globals (RateCard + Email). Seed + wipe routes cover everything. Migration to generate + apply next.
-- [ ] Phase 5 — Remaining web pages + preview routes.
+- [x] Phase 4 — Remaining collections scaffolded: Categories, Tags, Services (drafts), Projects (drafts), Brands (drafts), ContactSubmissions, Globals (RateCard + Email). Migration generated, applied to beta D1.
+- [x] Phase 5 — Remaining web pages + preview routes scaffolded: index.astro, about.astro, contact.astro, services/*, work/*, shared components (Clients, ServicesMenu, ContactWizard, ContactPreview, ProjectCard, etc.), full cms.ts with preview helpers, /preview/about + /preview/index + /preview/work SSR routes with live-preview bridge. CSP scoped to cms-beta.codeuncode.com. Web typecheck: 0 errors.
 - [ ] Phase 6 — Content cutover.
 
 Phases 1 and 2 are scaffolded in code but NOT yet validated end-to-end (needs a fresh `pnpm dev:cms` + admin user creation + seed + browser check). That verification is the Phase 3 end-gate work.

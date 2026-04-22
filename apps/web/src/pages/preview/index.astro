@@ -1,0 +1,73 @@
+---
+// SSR preview variant of / (home) — fetches draft Services so editors can see
+// unpublished service edits in the menu before hitting publish.
+export const prerender = false;
+
+import Base from "../../layouts/Base.astro";
+import ServicesMenu from "../../components/ServicesMenu.astro";
+import { getPublishedServicesPreview } from "../../lib/cms";
+import type { Service } from "@cms/payload-types";
+
+const cookie = Astro.request.headers.get("cookie");
+let services = await getPublishedServicesPreview(cookie);
+
+// Merge live-preview POST body into the list by id.
+if (Astro.request.method === "POST") {
+  const incoming = (await Astro.request.json()) as
+    | (Partial<Service> & { id?: number })
+    | null;
+  if (incoming?.id) {
+    const idx = services.findIndex((s) => s.id === incoming.id);
+    if (idx >= 0) {
+      services = services.slice();
+      services[idx] = { ...services[idx], ...(incoming as Service) };
+    } else {
+      services = [...services, incoming as Service];
+    }
+  }
+}
+
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+Astro.response.headers.set(
+  "Content-Security-Policy",
+  "frame-ancestors 'self' https://cms-beta.codeuncode.com http://localhost:3000",
+);
+---
+
+<Base title="Home (preview) — Code Uncode">
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+
+  <section class="mb-16">
+    <h1
+      class="mt-5 text-4xl md:text-5xl leading-[1.25] tracking-tight sm:text-6xl"
+    >
+      We design, build and maintain <span class="hero-mark"
+        >modern websites</span
+      > for people doing serious work
+    </h1>
+    <p class="mt-8 max-w-2xl text-base text-[var(--color-muted)]">
+      Fast, durably designed systems for people who think in years
+    </p>
+  </section>
+
+  <ServicesMenu services={services} />
+</Base>
+
+<style>
+  .hero-mark {
+    font-family: var(--font-serif);
+    font-style: italic;
+    background: linear-gradient(
+      180deg,
+      transparent 62%,
+      var(--color-accent) 62%,
+      var(--color-accent) 94%,
+      transparent 94%
+    );
+    padding: 0 0.08em;
+  }
+</style>
+
+<script>
+  import "../../scripts/live-preview";
+</script>

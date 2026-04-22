@@ -1,0 +1,842 @@
+---
+type HelpOption = { value: string; slug: string; bucket: string };
+
+type Props = {
+  helpOptions?: HelpOption[];
+};
+
+const cmsUrl = import.meta.env.PUBLIC_CMS_URL ?? "https://cms.codeuncode.com";
+
+const defaultHelpOptions: HelpOption[] = [
+  { value: "Design", slug: "design", bucket: "build" },
+  { value: "Website", slug: "development", bucket: "build" },
+  { value: "Maintenance & Hosting", slug: "ops", bucket: "maint" },
+  { value: "Performance Marketing", slug: "marketing", bucket: "perf" },
+  { value: "Something else", slug: "other", bucket: "other" },
+];
+
+const { helpOptions = defaultHelpOptions } = Astro.props;
+
+const buildScope = [
+  "Small site (up to 5 pages)",
+  "Medium (5-20 pages)",
+  "Large build / web app",
+  "Ongoing product",
+];
+const perfGoals = [
+  "More qualified leads",
+  "More revenue",
+  "More traffic",
+  "Stronger brand",
+];
+const maintPain = [
+  "Dependencies drifting behind",
+  "Deploys breaking",
+  "Performance regressions",
+  "Frequent content updates",
+  "Nobody owns it",
+];
+
+const timelineOptions = ["ASAP", "1-3 months", "3-6 months", "Flexible"];
+const budgetOptions = ["Under ₹1L", "₹1-5L", "₹5-15L", "₹15L+", "Not sure yet"];
+---
+
+<form class="wiz" data-wizard data-cms-url={cmsUrl} novalidate>
+  <header class="wiz__head">
+    <p class="wiz__step">Step <span data-wiz-current>1</span> of 5</p>
+    <div class="wiz__bar" aria-hidden="true">
+      <div class="wiz__bar-fill" data-wiz-bar style="width: 20%"></div>
+    </div>
+  </header>
+
+  <fieldset class="wiz__panel is-active" data-wiz-step="1">
+    <legend class="wiz__q">What do you need help with?</legend>
+    <p class="wiz__hint">Pick as many as apply.</p>
+    <div class="wiz__opts">
+      {
+        helpOptions.map((opt) => (
+          <label class="wiz__opt">
+            <input
+              type="checkbox"
+              name="help"
+              value={opt.value}
+              data-bucket={opt.bucket}
+              data-slug={opt.slug}
+            />
+            <span>{opt.value}</span>
+          </label>
+        ))
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="wiz__panel" data-wiz-step="2" data-wiz-branch="build">
+    <legend class="wiz__q">What's the rough scope?</legend>
+    <div class="wiz__opts">
+      {
+        buildScope.map((opt) => (
+          <label class="wiz__opt">
+            <input type="radio" name="scope" value={opt} />
+            <span>{opt}</span>
+          </label>
+        ))
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="wiz__panel" data-wiz-step="2" data-wiz-branch="perf">
+    <legend class="wiz__q">What's the primary goal?</legend>
+    <div class="wiz__opts">
+      {
+        perfGoals.map((opt) => (
+          <label class="wiz__opt">
+            <input type="radio" name="goal" value={opt} />
+            <span>{opt}</span>
+          </label>
+        ))
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="wiz__panel" data-wiz-step="2" data-wiz-branch="maint">
+    <legend class="wiz__q">What's the current pain?</legend>
+    <div class="wiz__opts">
+      {
+        maintPain.map((opt) => (
+          <label class="wiz__opt">
+            <input type="radio" name="pain" value={opt} />
+            <span>{opt}</span>
+          </label>
+        ))
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="wiz__panel" data-wiz-step="2" data-wiz-branch="other">
+    <legend class="wiz__q">Tell us a little about what you're after.</legend>
+    <label class="wiz__field">
+      <span>A short description</span>
+      <textarea name="other_context" rows="4"></textarea>
+    </label>
+  </fieldset>
+
+  <fieldset class="wiz__panel" data-wiz-step="3">
+    <legend class="wiz__q">When do you want to start?</legend>
+    <div class="wiz__opts">
+      {
+        timelineOptions.map((opt) => (
+          <label class="wiz__opt">
+            <input type="radio" name="timeline" value={opt} />
+            <span>{opt}</span>
+          </label>
+        ))
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="wiz__panel" data-wiz-step="4">
+    <legend class="wiz__q">What's the budget looking like?</legend>
+    <p class="wiz__hint">Rough ranges are fine - helps us scope properly.</p>
+    <div class="wiz__opts">
+      {
+        budgetOptions.map((opt) => (
+          <label class="wiz__opt">
+            <input type="radio" name="budget" value={opt} />
+            <span>{opt}</span>
+          </label>
+        ))
+      }
+    </div>
+  </fieldset>
+
+  <fieldset class="wiz__panel" data-wiz-step="5">
+    <legend class="wiz__q">Tell us about it.</legend>
+    <label class="wiz__field">
+      <span>Your name</span>
+      <input type="text" name="name" required autocomplete="name" />
+    </label>
+    <label class="wiz__field">
+      <span>Email</span>
+      <input type="email" name="email" required autocomplete="email" />
+    </label>
+    <label class="wiz__field">
+      <span>A few words about the project</span>
+      <textarea name="message" rows="5" required></textarea>
+    </label>
+  </fieldset>
+
+  <fieldset class="wiz__panel wiz__done" data-wiz-step="done">
+    <div class="wiz__done-stage" aria-hidden="true">
+      <i class="fa-slab fa-regular fa-paper-plane wiz__plane"></i>
+      <span class="wiz__trail"></span>
+      <i class="fa-slab fa-regular fa-heart wiz__heart wiz__heart--1"></i>
+      <i class="fa-slab fa-regular fa-heart wiz__heart wiz__heart--2"></i>
+      <i class="fa-slab fa-regular fa-heart wiz__heart wiz__heart--3"></i>
+    </div>
+    <legend class="wiz__q wiz__done-title" data-wiz-done-title>
+      Off it goes.
+    </legend>
+    <p class="wiz__hint wiz__done-hint" data-wiz-done-hint>
+      We've got your brief. We'll write back within two working days; likely
+      sooner.
+    </p>
+  </fieldset>
+
+  <footer class="wiz__foot">
+    <button type="button" class="wiz__btn" data-wiz-back hidden>← Back</button>
+    <button type="button" class="wiz__btn wiz__btn--primary" data-wiz-next>
+      Next →
+    </button>
+    <button
+      type="submit"
+      class="wiz__btn wiz__btn--primary"
+      data-wiz-submit
+      hidden
+    >
+      Send it
+    </button>
+  </footer>
+</form>
+
+<style>
+  .wiz {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 36rem;
+  }
+  .wiz__head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .wiz__step {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    margin: 0;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .wiz__bar {
+    height: 6px;
+    background: var(--wiz-track, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--wiz-border, currentColor);
+  }
+  .wiz__bar-fill {
+    height: 100%;
+    background: var(--wiz-fill, currentColor);
+    transition: width 0.25s ease;
+  }
+
+  .wiz__panel {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: none;
+  }
+  .wiz__panel.is-active {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    animation: wiz-panel-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes wiz-panel-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wiz__panel.is-active { animation: none; }
+  }
+  .wiz__q {
+    font-family: var(--font-serif, inherit);
+    font-size: 1.65rem;
+    font-weight: 500;
+    padding: 0;
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .wiz__hint {
+    margin: 0;
+    opacity: 0.75;
+    font-size: 0.9rem;
+  }
+
+  .wiz__opts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .wiz__opt {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--wiz-border, currentColor);
+    cursor: pointer;
+    user-select: none;
+    border-radius: 6px;
+  }
+  .wiz__opt:hover {
+    background: var(--wiz-hover, rgba(0, 0, 0, 0.04));
+  }
+  .wiz__opt input {
+    accent-color: var(--wiz-fill, currentColor);
+  }
+
+  .wiz__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .wiz__field span {
+    font-size: 0.85rem;
+    opacity: 0.75;
+  }
+  .wiz__field input,
+  .wiz__field textarea {
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--wiz-border, currentColor);
+    padding: 0.7rem 0.85rem;
+    font: inherit;
+    width: 100%;
+    border-radius: 6px;
+  }
+  .wiz__field textarea {
+    resize: vertical;
+  }
+
+  .wiz__foot {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  .wiz__btn {
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--wiz-border, currentColor);
+    padding: 0.7rem 1.15rem;
+    cursor: pointer;
+    font: inherit;
+    border-radius: 6px;
+  }
+  .wiz__btn:hover {
+    background: var(--wiz-hover, rgba(0, 0, 0, 0.04));
+  }
+  .wiz__btn--primary {
+    background: var(--wiz-fill, currentColor);
+    color: var(--wiz-fill-fg, #fff);
+    border-color: var(--wiz-fill, currentColor);
+  }
+  .wiz__btn--primary:hover {
+    filter: brightness(0.95);
+    background: var(--wiz-fill, currentColor);
+  }
+  .wiz__btn[hidden] {
+    display: none;
+  }
+
+  /* --- Done screen --- */
+  .wiz__done {
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem !important;
+    padding: 1rem 0;
+  }
+  .wiz__done-stage {
+    position: relative;
+    width: 100%;
+    height: 120px;
+    margin-bottom: 0.5rem;
+    pointer-events: none;
+  }
+  .wiz__plane {
+    position: absolute;
+    left: 8%;
+    top: 60%;
+    font-size: 44px;
+    color: var(--color-accent-ink, #1a1400);
+    background: var(--wiz-fill, currentColor);
+    padding: 14px;
+    border-radius: 999px;
+    transform-origin: center;
+    animation: wiz-plane-fly 2400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 0;
+  }
+  .wiz__trail {
+    position: absolute;
+    left: 14%;
+    top: 82%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--wiz-fill, currentColor)
+    );
+    opacity: 0.6;
+    animation: wiz-trail 2400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .wiz__heart {
+    position: absolute;
+    font-size: 14px;
+    color: var(--wiz-fill, currentColor);
+    opacity: 0;
+    animation: wiz-heart 1600ms ease-out forwards;
+  }
+  .wiz__heart--1 {
+    left: 70%;
+    top: 48%;
+    animation-delay: 800ms;
+  }
+  .wiz__heart--2 {
+    left: 78%;
+    top: 30%;
+    animation-delay: 1100ms;
+    font-size: 18px;
+  }
+  .wiz__heart--3 {
+    left: 86%;
+    top: 54%;
+    animation-delay: 1400ms;
+  }
+
+  @keyframes wiz-plane-fly {
+    0% {
+      opacity: 0;
+      transform: translate(-40px, 30px) rotate(-25deg) scale(0.5);
+    }
+    30% {
+      opacity: 1;
+      transform: translate(20px, 0) rotate(-15deg) scale(1);
+    }
+    60% {
+      transform: translate(180px, -40px) rotate(-10deg) scale(1);
+    }
+    100% {
+      opacity: 0.2;
+      transform: translate(420px, -80px) rotate(-5deg) scale(0.8);
+    }
+  }
+  @keyframes wiz-trail {
+    0% {
+      width: 0;
+      opacity: 0;
+    }
+    30% {
+      width: 40%;
+      opacity: 0.6;
+    }
+    100% {
+      width: 70%;
+      opacity: 0;
+    }
+  }
+  @keyframes wiz-heart {
+    0% {
+      opacity: 0;
+      transform: translateY(12px) scale(0.6);
+    }
+    35% {
+      opacity: 1;
+      transform: translateY(-4px) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-30px) scale(0.9);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wiz__plane,
+    .wiz__trail,
+    .wiz__heart {
+      animation: none;
+      opacity: 1;
+    }
+    .wiz__plane {
+      transform: none;
+    }
+  }
+
+  .wiz__done-title {
+    font-size: 2rem !important;
+    font-style: italic;
+  }
+  .wiz__done-hint {
+    max-width: 28rem;
+    margin: 0 auto !important;
+    font-size: 0.95rem !important;
+  }
+  .wiz__done-sign {
+    margin: 0.75rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--color-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    align-items: center;
+  }
+  .wiz__done-brand {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-style: italic;
+    color: var(--color-fg);
+    letter-spacing: -0.01em;
+  }
+  .wiz__done-brand span {
+    color: var(--color-muted);
+    margin: 0 0.05em;
+  }
+
+  @media (max-width: 640px) {
+    .wiz__q {
+      font-size: 1.35rem;
+    }
+    .wiz__opt {
+      padding: 1rem;
+      font-size: 1rem;
+    }
+    .wiz__btn {
+      flex: 1;
+      padding: 1rem;
+      font-size: 1rem;
+    }
+    /* Sticky footer with a solid, opaque backdrop so the buttons never bleed
+       into whatever's behind (including the bottom nav bar). */
+    .wiz__foot {
+      position: sticky;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
+      background: color-mix(in srgb, var(--color-bg) 95%, transparent);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      padding: 0.75rem 0.5rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+      margin: 0 -0.5rem;
+      border-top: 1px solid var(--color-border);
+      z-index: 10;
+    }
+    .wiz__done-stage {
+      height: 90px;
+    }
+    .wiz__plane {
+      font-size: 36px;
+      padding: 11px;
+    }
+  }
+</style>
+
+<script>
+  type Branch = "build" | "perf" | "maint" | "other";
+
+  const pickBranch = (buckets: Set<string>): Branch => {
+    if (buckets.has("build")) return "build";
+    if (buckets.has("perf")) return "perf";
+    if (buckets.has("maint")) return "maint";
+    return "other";
+  };
+
+  const initWizards = () => {
+    document
+      .querySelectorAll<HTMLFormElement & { __wizInit?: boolean }>(
+        "[data-wizard]",
+      )
+      .forEach((form) => {
+        if (form.__wizInit) return;
+        form.__wizInit = true;
+      const allPanels = Array.from(
+        form.querySelectorAll<HTMLFieldSetElement>("[data-wiz-step]"),
+      );
+      const donePanel = allPanels.find(
+        (p) => p.getAttribute("data-wiz-step") === "done",
+      );
+      const bar = form.querySelector<HTMLElement>("[data-wiz-bar]");
+      const currentEl = form.querySelector<HTMLElement>("[data-wiz-current]");
+      const nextBtn = form.querySelector<HTMLButtonElement>("[data-wiz-next]");
+      const backBtn = form.querySelector<HTMLButtonElement>("[data-wiz-back]");
+      const submitBtn =
+        form.querySelector<HTMLButtonElement>("[data-wiz-submit]");
+
+      const totalSteps = 5;
+      let step = 1;
+      let branch: Branch = "build";
+
+      const panelFor = (s: number): HTMLFieldSetElement | null => {
+        const candidates = allPanels.filter(
+          (p) => p.getAttribute("data-wiz-step") === String(s),
+        );
+        if (candidates.length === 1) return candidates[0];
+        return (
+          candidates.find(
+            (p) => p.getAttribute("data-wiz-branch") === branch,
+          ) ??
+          candidates[0] ??
+          null
+        );
+      };
+
+      const render = () => {
+        allPanels.forEach((p) => p.classList.remove("is-active"));
+        const panel = panelFor(step);
+        panel?.classList.add("is-active");
+        if (currentEl) currentEl.textContent = String(step);
+        if (bar) bar.style.width = `${(step / totalSteps) * 100}%`;
+        if (backBtn) backBtn.hidden = step === 1;
+        const last = step === totalSteps;
+        if (nextBtn) nextBtn.hidden = last;
+        if (submitBtn) submitBtn.hidden = !last;
+      };
+
+      const computeBranch = () => {
+        const checked = form.querySelectorAll<HTMLInputElement>(
+          'input[name="help"]:checked',
+        );
+        const buckets = new Set<string>();
+        checked.forEach((c) => {
+          const b = c.getAttribute("data-bucket");
+          if (b) buckets.add(b);
+        });
+        branch = pickBranch(buckets);
+      };
+
+      const validateStep = (): boolean => {
+        const panel = panelFor(step);
+        if (!panel) return true;
+        const inputs = Array.from(
+          panel.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+            "input, textarea",
+          ),
+        );
+        if (panel.querySelector('input[type="checkbox"]')) {
+          const anyChecked = inputs.some(
+            (i) => i instanceof HTMLInputElement && i.checked,
+          );
+          if (!anyChecked) {
+            alert("Pick at least one.");
+            return false;
+          }
+          return true;
+        }
+        if (panel.querySelector('input[type="radio"]')) {
+          const name = (inputs[0] as HTMLInputElement)?.name;
+          if (!name) return true;
+          const chosen = form.querySelector(
+            `input[name="${name}"]:checked`,
+          ) as HTMLInputElement | null;
+          if (!chosen) {
+            alert("Pick one to continue.");
+            return false;
+          }
+          return true;
+        }
+        for (const i of inputs) {
+          if (i.hasAttribute("required") && !i.checkValidity()) {
+            i.reportValidity();
+            return false;
+          }
+        }
+        return true;
+      };
+
+      nextBtn?.addEventListener("click", () => {
+        if (!validateStep()) return;
+        if (step === 1) computeBranch();
+        if (step < totalSteps) {
+          step += 1;
+          render();
+        }
+      });
+
+      backBtn?.addEventListener("click", () => {
+        if (step > 1) {
+          step -= 1;
+          render();
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!validateStep()) return;
+        const fd = new FormData(form);
+        const payload = {
+          name: (fd.get("name") as string) || "",
+          email: (fd.get("email") as string) || "",
+          message: (fd.get("message") as string) || "",
+          help: fd.getAll("help").join(", "),
+          branch,
+          scope: (fd.get("scope") as string) || "",
+          goal: (fd.get("goal") as string) || "",
+          pain: (fd.get("pain") as string) || "",
+          otherContext: (fd.get("other_context") as string) || "",
+          timeline: (fd.get("timeline") as string) || "",
+          budget: (fd.get("budget") as string) || "",
+        };
+
+        const cmsUrl =
+          form.getAttribute("data-cms-url") || "https://cms.codeuncode.com";
+        const doneTitle = form.querySelector<HTMLElement>(
+          "[data-wiz-done-title]",
+        );
+        const doneHint = form.querySelector<HTMLElement>(
+          "[data-wiz-done-hint]",
+        );
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Sending…";
+        }
+
+        let ok = false;
+        try {
+          const res = await fetch(`${cmsUrl}/api/contact`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          ok = res.ok;
+        } catch {
+          ok = false;
+        }
+
+        if (donePanel) {
+          allPanels.forEach((p) => p.classList.remove("is-active"));
+          donePanel.classList.add("is-active");
+        }
+        if (nextBtn) nextBtn.hidden = true;
+        if (submitBtn) submitBtn.hidden = true;
+        if (backBtn) backBtn.hidden = true;
+        if (bar) bar.style.width = "100%";
+
+        if (!ok) {
+          if (doneTitle) doneTitle.textContent = "Something went wrong.";
+          if (doneHint)
+            doneHint.innerHTML =
+              'We couldn\'t submit the form. Please email <a href="mailto:hello@codeuncode.com">hello@codeuncode.com</a> directly.';
+        }
+      });
+
+      // ----- Live preview wiring -----
+      const previewRoot = document.querySelector<HTMLElement>(
+        "[data-contact-preview]",
+      );
+
+      const branchLabel: Record<Branch, string> = {
+        build: "Scope",
+        perf: "Primary goal",
+        maint: "Current pain",
+        other: "Context",
+      };
+
+      const setPreview = (key: string, value: string | null) => {
+        if (!previewRoot) return;
+        const target = previewRoot.querySelector<HTMLElement>(
+          `[data-preview="${key}"]`,
+        );
+        if (!target) return;
+        const clean = (value ?? "").trim();
+        const wasFilled = target.classList.contains("is-filled");
+        if (clean) {
+          target.classList.add("is-filled");
+          target.textContent = clean;
+          // Pulse only on the empty → filled transition, not every keystroke.
+          if (!wasFilled) {
+            target.classList.remove("just-filled");
+            // Reflow trick to restart the animation.
+            void target.offsetWidth;
+            target.classList.add("just-filled");
+          }
+        } else {
+          target.classList.remove("is-filled", "just-filled");
+          const original = target.getAttribute("data-empty");
+          if (original !== null) {
+            target.innerHTML = `<span class="preview__empty">${original}</span>`;
+          }
+        }
+      };
+
+      // Capture original empty placeholders once so we can restore them.
+      if (previewRoot) {
+        previewRoot
+          .querySelectorAll<HTMLElement>("[data-preview]")
+          .forEach((el) => {
+            const empty = el.querySelector<HTMLElement>(".preview__empty");
+            if (empty) el.setAttribute("data-empty", empty.textContent ?? "");
+          });
+      }
+
+      const updatePreview = () => {
+        if (!previewRoot) return;
+        computeBranch();
+        const fd = new FormData(form);
+
+        const name = ((fd.get("name") as string) || "").trim();
+        const email = ((fd.get("email") as string) || "").trim();
+        const fromLine =
+          name || email
+            ? `${name || "unnamed"}${email ? ` <${email}>` : ""}`
+            : "";
+        setPreview("from", fromLine);
+        setPreview("subject", name ? `Brief from ${name}` : "");
+
+        const help = fd.getAll("help").map(String).filter(Boolean);
+        setPreview("help", help.length ? help.join(" · ") : "");
+
+        const branchValue =
+          branch === "build"
+            ? (fd.get("scope") as string)
+            : branch === "perf"
+              ? (fd.get("goal") as string)
+              : branch === "maint"
+                ? (fd.get("pain") as string)
+                : (fd.get("other_context") as string);
+        // Update the branch label text (dt element) directly since it's just copy.
+        const labelEl = previewRoot.querySelector<HTMLElement>(
+          '[data-preview="branch-label"]',
+        );
+        if (labelEl) labelEl.textContent = branchLabel[branch];
+        setPreview("branch-value", branchValue || "");
+
+        setPreview("timeline", (fd.get("timeline") as string) || "");
+        setPreview("budget", (fd.get("budget") as string) || "");
+        setPreview("message", (fd.get("message") as string) || "");
+      };
+
+      form.addEventListener("input", updatePreview);
+      form.addEventListener("change", updatePreview);
+
+      // Prefill from ?category=&service= (set by the services page links).
+      const prefill = () => {
+        const params = new URLSearchParams(window.location.search);
+        const category = params.get("category");
+        const service = params.get("service");
+
+        if (category) {
+          const match = form.querySelector<HTMLInputElement>(
+            `input[name="help"][data-slug="${CSS.escape(category)}"]`,
+          );
+          if (match) {
+            match.checked = true;
+            computeBranch();
+          }
+        }
+
+        if (service) {
+          const msg = form.querySelector<HTMLTextAreaElement>(
+            'textarea[name="message"]',
+          );
+          if (msg && !msg.value) {
+            msg.value = `Interested in: ${service}.\n\n`;
+          }
+        }
+      };
+      prefill();
+      updatePreview();
+
+      render();
+      });
+  };
+
+  initWizards();
+</script>

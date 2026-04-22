@@ -1,0 +1,93 @@
+---
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === "/" ? path === "/" : path.startsWith(href);
+
+const items = [
+  { href: "/", label: "Home", icon: "house" },
+  { href: "/work", label: "Work", icon: "briefcase" },
+  { href: "/about", label: "About", icon: "face-smile" },
+  { href: "/contact", label: "Talk", icon: "envelope" },
+];
+---
+
+<nav class="bottom-nav" aria-label="Primary">
+  {
+    items.map((item) => (
+      <a
+        href={item.href}
+        class={`bottom-nav__item ${isActive(item.href) ? "is-active" : ""}`}
+        aria-current={isActive(item.href) ? "page" : undefined}
+      >
+        <i
+          class={`fa-slab fa-regular fa-${item.icon} bottom-nav__icon`}
+          aria-hidden="true"
+        />
+        <span class="bottom-nav__label">{item.label}</span>
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .bottom-nav {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 80;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+      backdrop-filter: saturate(180%) blur(16px);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
+      border-top: 1px solid var(--color-border);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+  }
+
+  .bottom-nav__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.55rem 0.25rem 0.7rem;
+    text-decoration: none;
+    color: var(--color-muted);
+    min-height: 56px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bottom-nav__item.is-active {
+    color: var(--color-fg);
+  }
+  .bottom-nav__item.is-active .bottom-nav__icon {
+    color: var(--color-accent-ink);
+    background: var(--color-accent);
+  }
+  .bottom-nav__icon {
+    font-size: 18px;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    line-height: 1;
+  }
+  .bottom-nav__label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .bottom-nav__item:active {
+    transform: scale(0.96);
+  }
+</style>

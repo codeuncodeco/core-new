@@ -1,29 +1,37 @@
 ---
-// SSR preview variant of /about — fetches draft Partners via cookie-forwarded
-// auth so editors can see unpublished changes before hitting publish. On POST
-// (from the live-preview client script), the request body contains the single
-// doc the editor is currently editing; we merge it into the fetched list by id.
-// Brands preview lands in Phase 4.
+// SSR preview variant of /about — fetches draft Partners and Brands (via
+// cookie-forwarded auth) so editors can see unpublished changes before
+// hitting publish. On POST (from the live-preview client script), the
+// request body contains the single doc the editor is currently editing;
+// we merge it into the fetched list by id so the iframe reflects typing
+// in real time without waiting for a save.
 export const prerender = false;
 
 import Base from "../../layouts/Base.astro";
 import Partners from "../../components/Partners.astro";
-import { getPartnersPreview } from "../../lib/cms";
-import type { Partner } from "@cms/payload-types";
+import Clients from "../../components/Clients.astro";
+import { getBrandsPreview, getPartnersPreview } from "../../lib/cms";
+import type { Brand, Partner } from "@cms/payload-types";
 
 const cookie = Astro.request.headers.get("cookie");
 const collection = Astro.url.searchParams.get("collection");
 
-let partners = await getPartnersPreview(cookie);
+let [partners, brands] = await Promise.all([
+  getPartnersPreview(cookie),
+  getBrandsPreview(cookie),
+]);
 
-// POST = live-preview event. Body is the edited doc. Use ?collection= to
-// disambiguate once more than one collection previews here (Phase 4+).
+// POST = live-preview event. Body is the edited doc. Use the ?collection=
+// query param (set by the admin's livePreview.url) to know which list to
+// merge into.
 if (Astro.request.method === "POST") {
   const incoming = (await Astro.request.json()) as
     | (Partial<Partner> & { id?: number })
-    | null;
-  if (collection === "partners" && incoming?.id) {
+    | (Partial<Brand> & { id?: number });
+  if (collection === "partners" && incoming && "tagline" in incoming) {
     partners = mergeDoc(partners, incoming as Partner);
+  } else if (collection === "brands" && incoming && "domain" in incoming) {
+    brands = mergeDoc(brands, incoming as Brand);
   }
 }
 
@@ -36,10 +44,13 @@ function mergeDoc<T extends { id: number }>(list: T[], incoming: T): T[] {
   return next;
 }
 
-// Don't index previews.
+const hasBrands = brands.length > 0;
+
+// Don't let search engines index preview pages.
 Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
-// Allow the admin iframes to embed us. Add each CMS origin the preview must
-// tolerate (local + staging + prod).
+// Allow the Payload admin (same parent domain in prod; localhost:3000 in dev)
+// to embed this page as an iframe for the live-preview panel. Locks out
+// everyone else.
 Astro.response.headers.set(
   "Content-Security-Policy",
   "frame-ancestors 'self' https://cms-beta.codeuncode.com http://localhost:3000",
@@ -136,7 +147,7 @@ const team = [
 
   <Partners partners={partners} />
 
-  {/* Clients section lands in Phase 4. */}
+  {hasBrands && <Clients brands={brands} />}
 
   <section class="cta">
     <h2>Have something to build?</h2>
