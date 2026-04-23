@@ -253,29 +253,16 @@ Batches in order:
 
 ---
 
-### Phase 6 — Cutover (prod deploy + content migration)
+### Phase 6 — Cutover (superseded by `docs/move.md`)
 
-**Goals:** first deploy of new-core to the `cu-core` + `cu-web` prod workers, move real content from old prod to new prod, retire old repo. The `cu-core` + `cu-web` worker names are currently held by old-core; swapping them is part of this phase.
+The original plan called for claiming the `cu-core` / `cu-web` worker names from old-core during cutover. We instead renamed new-core's deployable resources under the `codeuncode-*` scheme (see [`docs/move.md`](./move.md)), which removes the namespace race and makes cutover a pure DNS/route swap.
 
-**Deliverables:**
-- Content migration script:
-  - Export old `cu-core` D1 per collection (JSON) via `wrangler d1 export --remote`.
-  - Transform `published: boolean` rows → `_status: 'published'` for collections that are drafts in new core.
-  - Import into `cu-core-prod` D1 via Payload's local API or direct SQL.
-  - Copy R2 media objects from old bucket to `cu-core-prod`.
-- Prod deploy of new core:
-  - Old-core's routes on `cms.codeuncode.com` + `codeuncode.com` need to be released (removed from old-core's wrangler config and redeployed, or deleted via dashboard) so new-core can claim them.
-  - `wrangler deploy --env production` for both apps.
-  - Verify new-core's workers now serve the prod routes.
-- Old-core repo archived on GitHub. README points to `core-new`.
-- Rename `core-new` → `core`, old `core` → `core-legacy`.
+See `docs/move.md` for:
+- Test env rename (`beta` → `test`, new `codeuncode-test` D1/R2, worker `codeuncode-cms-test` / `codeuncode-web-test` at `test-cms.codeuncode.com` / `test.codeuncode.com`).
+- Live env provisioning (`codeuncode-live` D1/R2, worker `codeuncode-cms` / `codeuncode-web`).
+- Cutover sequence (content migration + release routes from old-core + claim them on new-core's `env.live`).
 
-**Validation:**
-- Public site identical to before cutover. No content missing.
-- Admin access for editors works with the parent-domain cookie.
-- Live preview works in prod for Partners/Brands/Services/Projects.
-
-**End gate:** live.
+Content migration mechanics live in [`docs/content-migration.md`](./content-migration.md).
 
 ---
 

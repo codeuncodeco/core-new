@@ -48,7 +48,7 @@ const rest = projects.filter((p) => !p.featured);
 Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
 Astro.response.headers.set(
   "Content-Security-Policy",
-  "frame-ancestors 'self' https://cms-beta.codeuncode.com http://localhost:3000",
+  "frame-ancestors 'self' https://cms.codeuncode.com https://test-cms.codeuncode.com http://localhost:3000",
 );
 ---
 

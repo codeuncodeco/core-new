@@ -1,6 +1,6 @@
 # Content migration: old-core → core-new
 
-Part of Phase 6 of [`plan.md`](./plan.md). This doc fleshes out the "how": export every piece of real content + media from old-core's prod, then seed it into core-new's beta or prod D1 without manual re-entry.
+Cutover step of [`move.md`](./move.md) Phase C. This doc fleshes out the "how": export every piece of real content + media from old-core's prod, then seed it into core-new's test or live D1 without manual re-entry.
 
 ## Goals
 
@@ -93,9 +93,9 @@ Public API returns only published docs for drafts-enabled collections, which is 
 
 ### Prerequisites
 
-- New core-new worker already deployed to beta (cms-beta.codeuncode.com).
-- Beta D1 has all collections migrated (Phase 4 complete) — schema matches what the export expects.
-- Beta R2 bucket (`cu-core-staging`) is empty or known-to-not-conflict.
+- New core-new worker already deployed to test (test-cms.codeuncode.com).
+- Test D1 has all collections migrated — schema matches what the export expects.
+- Test R2 bucket (`codeuncode-test`) is empty or known-to-not-conflict.
 - `PAYLOAD_SECRET` + `SEED_SECRET` env vars known.
 
 ### Script: `migration/scripts/import-new.mjs`
@@ -146,7 +146,7 @@ D1 schema stores these as plain text columns, Payload accepts them if passed exp
 
 1. **Pre-flight.**
    - Export-dry-run: confirm counts match expectations.
-   - Import-dry-run against a scratch D1 (or reset beta): confirm all relationships resolve.
+   - Import-dry-run against a scratch D1 (or reset test): confirm all relationships resolve.
    - Confirm R2 free space / quota on prod bucket.
 
 2. **Export.**
@@ -154,17 +154,17 @@ D1 schema stores these as plain text columns, Payload accepts them if passed exp
    - Verify `migration/export/meta.json` counts match old prod admin counts.
    - Commit the export snapshot to a branch (for provenance) OR archive separately — don't leave it in main.
 
-3. **Beta rehearsal.**
-   - Wipe beta D1 + R2: `pnpm --filter cu-core exec wrangler d1 execute D1 --remote --command "DELETE FROM ..."` (or export + restore fresh).
-   - `node migration/scripts/import-new.mjs --target=beta`
-   - Spot-check beta.codeuncode.com + cms-beta.codeuncode.com — all content visible.
+3. **Test rehearsal.**
+   - Wipe test D1 + R2: `pnpm --filter cu-core exec wrangler d1 execute D1 --remote --command "DELETE FROM ..."` (or export + restore fresh).
+   - `node migration/scripts/import-new.mjs --target=test`
+   - Spot-check test.codeuncode.com + test-cms.codeuncode.com — all content visible.
 
-4. **Cutover — prod.**
-   - Add `env.production` to `apps/cms/wrangler.jsonc` + `apps/web/wrangler.jsonc` with `cu-core` / `cu-web` worker names + `cms.codeuncode.com` / `codeuncode.com` routes. (See plan.md Phase 6 for the exact config.)
+4. **Cutover — live.**
+   - `env.live` already exists in `apps/cms/wrangler.jsonc` + `apps/web/wrangler.jsonc`. Add `cms.codeuncode.com` / `codeuncode.com` routes to those blocks now (they were intentionally omitted until cutover). See `docs/move.md` Phase C.
    - Release those routes from old-core (remove from old-core wrangler, redeploy old-core, or delete routes in dashboard).
-   - `pnpm --filter cu-core run deploy --env=production` (both db + app).
-   - `pnpm --filter cu-web deploy --env=production`.
-   - `node migration/scripts/import-new.mjs --target=prod`
+   - `pnpm --filter cu-core run deploy --env=live` (both db + app).
+   - `pnpm --filter cu-web deploy --env=live`.
+   - `node migration/scripts/import-new.mjs --target=live`
    - Smoke test.
 
 5. **Post-cutover.**
@@ -179,7 +179,7 @@ D1 schema stores these as plain text columns, Payload accepts them if passed exp
 If import fails or content looks wrong, the plan is:
 
 1. **Prod import botched** — rollback prod D1 to backup:
-   - Before step 4, `wrangler d1 export D1 --remote --env production --output prod-backup-<ts>.sql`.
+   - Before step 4, `wrangler d1 export D1 --remote --env live --output prod-backup-<ts>.sql`.
    - If needed: drop current prod DB content and replay the backup.
 2. **Routes pointing at broken new-core** — re-add routes to old-core wrangler, redeploy old-core. Old-core is never turned off until Phase 6 step 5.
 3. **Media uploaded but DB rolled back** — uploaded R2 objects become orphans. Periodically clean by listing R2 and diffing against `media` table.
@@ -203,4 +203,4 @@ If import fails or content looks wrong, the plan is:
 - [ ] `migration/export/` gitignored at repo root.
 - [ ] `migration/README.md` inside the dir — usage + env var reference.
 - [ ] `.env.example` entries for migration scripts: `OLD_CMS_URL`, `TARGET_CMS_URL`, `SEED_SECRET`.
-- [ ] Rehearsal run on beta with real export — verified before prod cutover.
+- [ ] Rehearsal run on test with real export — verified before live cutover.

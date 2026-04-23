@@ -1,6 +1,5 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "cu-web-beta",
   "compatibility_date": "2026-01-01",
   "compatibility_flags": [
     // Required by @astrojs/cloudflare for the SSR worker.
@@ -18,9 +17,25 @@
   "observability": {
     "enabled": true
   },
-  "vars": {
-    "PUBLIC_CMS_URL": "https://cms-beta.codeuncode.com"
-  },
-  // "beta" = new-core's pre-cutover public URL. Swaps to codeuncode.com at Phase 6.
-  "routes": [{ "pattern": "beta.codeuncode.com", "custom_domain": true }]
+  // Top-level has no bindings/vars/routes by design (washi pattern). Every
+  // deploy must pick an env explicitly with `--env=<name>`.
+  "env": {
+    // Remote pre-prod. test.codeuncode.com.
+    "test": {
+      "name": "codeuncode-web-test",
+      "vars": {
+        "PUBLIC_CMS_URL": "https://test-cms.codeuncode.com"
+      },
+      "routes": [{ "pattern": "test.codeuncode.com", "custom_domain": true }]
+    },
+    // Remote prod. codeuncode.com. Routes omitted until Phase C cutover —
+    // until then this worker serves only on its workers.dev URL so old-core
+    // keeps serving prod.
+    "live": {
+      "name": "codeuncode-web",
+      "vars": {
+        "PUBLIC_CMS_URL": "https://cms.codeuncode.com"
+      }
+    }
+  }
 }

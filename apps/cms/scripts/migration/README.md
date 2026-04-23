@@ -1,7 +1,7 @@
 # Content migration runbook
 
 Copy published content from old-core prod (`cms.codeuncode.com`) into new-core's
-beta CMS (`cms-beta.codeuncode.com`). Media files travel too.
+test CMS (`test-cms.codeuncode.com`). Media files travel too.
 
 Plan (context): [`docs/content-migration.md`](../../../../docs/content-migration.md).
 
@@ -16,11 +16,11 @@ pnpm run migration:export
 # 2. (optional) Rehearse against local miniflare first
 pnpm run migration:import:local
 
-# 3. Import into beta remote
-pnpm run migration:import:beta
+# 3. Import into test remote
+pnpm run migration:import:test
 
 # 4. Verify
-curl -s "https://cms-beta.codeuncode.com/api/services?limit=0" | jq .totalDocs
+curl -s "https://test-cms.codeuncode.com/api/services?limit=0" | jq .totalDocs
 ```
 
 Detailed steps + flags + gotchas follow below.
@@ -59,9 +59,9 @@ pnpm run migration:import:local -- --dry-run
 pnpm run migration:import:local -- --only=media,brands
 pnpm run migration:import:local -- --mode=append   # default is --mode=replace
 
-# Ingest into beta remote
-pnpm run migration:import:beta
-pnpm run migration:import:beta -- --dry-run
+# Ingest into test remote
+pnpm run migration:import:test
+pnpm run migration:import:test -- --dry-run
 ```
 
 ### Seed / wipe
@@ -73,15 +73,15 @@ curl http://localhost:3000/seed
 # Seed a single collection locally
 curl "http://localhost:3000/seed?only=partners"
 
-# Seed against beta remote (SEED_SECRET required)
-curl "https://cms-beta.codeuncode.com/seed?secret=$SEED_SECRET"
-curl "https://cms-beta.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"
+# Seed against test remote (SEED_SECRET required)
+curl "https://test-cms.codeuncode.com/seed?secret=$SEED_SECRET"
+curl "https://test-cms.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"
 
 # Wipe every seedable collection (local)
 curl http://localhost:3000/wipe
 
-# Wipe beta
-curl "https://cms-beta.codeuncode.com/wipe?secret=$SEED_SECRET"
+# Wipe test
+curl "https://test-cms.codeuncode.com/wipe?secret=$SEED_SECRET"
 ```
 
 Services/Categories/Tags must be seeded together (relational deps) — the
@@ -91,32 +91,32 @@ endpoint 400s if you try to split them.
 
 ```sh
 # List rows in payload_migrations (confirms which migrations have been applied)
-pnpm exec wrangler d1 execute D1 --remote --env beta \
+pnpm exec wrangler d1 execute D1 --remote --env test \
   --command "SELECT name, batch FROM payload_migrations ORDER BY id;"
 
 # Show a table's columns
-pnpm exec wrangler d1 execute D1 --remote --env beta \
+pnpm exec wrangler d1 execute D1 --remote --env test \
   --command "PRAGMA table_info(services);"
 
 # Row counts per collection
-pnpm exec wrangler d1 execute D1 --remote --env beta \
+pnpm exec wrangler d1 execute D1 --remote --env test \
   --command "SELECT 'services' t, COUNT(*) FROM services UNION ALL
              SELECT 'projects', COUNT(*) FROM projects UNION ALL
              SELECT 'brands',   COUNT(*) FROM brands UNION ALL
              SELECT 'media',    COUNT(*) FROM media;"
 
-# Dump a SQL backup of the beta DB (safety net before a risky import)
-pnpm exec wrangler d1 export D1 --remote --env beta \
+# Dump a SQL backup of the test DB (safety net before a risky import)
+pnpm exec wrangler d1 export D1 --remote --env test \
   --output ../../prod-backup-$(date +%Y%m%d-%H%M).sql
 
-# List R2 objects in the beta bucket
-pnpm exec wrangler r2 object list cu-core-staging
+# List R2 objects in the test bucket
+pnpm exec wrangler r2 object list codeuncode-test
 ```
 
 ### Verification (public REST API)
 
 ```sh
-CMS=https://cms-beta.codeuncode.com
+CMS=https://test-cms.codeuncode.com
 
 for slug in categories tags services projects brands partners media; do
   n=$(curl -s "$CMS/api/$slug?limit=0" | jq .totalDocs)
@@ -127,14 +127,14 @@ done
 ### Redo / recover
 
 ```sh
-# Full redo: wipe beta, re-import (idempotent default is --mode=replace)
-curl "https://cms-beta.codeuncode.com/wipe?secret=$SEED_SECRET"
-pnpm run migration:import:beta
+# Full redo: wipe test, re-import (idempotent default is --mode=replace)
+curl "https://test-cms.codeuncode.com/wipe?secret=$SEED_SECRET"
+pnpm run migration:import:test
 
 # Redo only media (say the import crashed mid-run)
-pnpm exec wrangler d1 execute D1 --remote --env beta \
+pnpm exec wrangler d1 execute D1 --remote --env test \
   --command "DELETE FROM media;"
-pnpm run migration:import:beta -- --only=media
+pnpm run migration:import:test -- --only=media
 ```
 
 
@@ -146,7 +146,7 @@ pnpm run migration:import:beta -- --only=media
 
 **Not exported from old-core:** partners — the collection wasn't deployed to
 old-core prod. After import, seed the default 4 partners on new-core with
-`curl "https://cms-beta.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"`.
+`curl "https://test-cms.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"`.
 
 ## What doesn't
 
@@ -158,7 +158,7 @@ old-core prod. After import, seed the default 4 partners on new-core with
 ## Prereqs
 
 - Old-core prod is up at `cms.codeuncode.com` (public API reachable).
-- New-core beta is deployed + schema migrated + an admin user exists.
+- New-core test is deployed + schema migrated + an admin user exists.
 - Run commands from `apps/cms/`:
   ```sh
   cd apps/cms
@@ -219,13 +219,13 @@ CLOUDFLARE_ENV=local pnpm exec tsx scripts/migration/import-new.ts
 No secrets needed. Writes into the `.wrangler/state/` miniflare DB + R2.
 Good for validating the import logic end-to-end before touching remote.
 
-### Option B — import into beta remote
+### Option B — import into test remote
 
-Same trick as `deploy:database` — `NODE_ENV=production` + `CLOUDFLARE_ENV=beta`
-makes `getCloudflareContext` bind to remote `cu-core-staging` D1 + R2.
+Same trick as `deploy:database` — `NODE_ENV=production` + `CLOUDFLARE_ENV=test`
+makes `getCloudflareContext` bind to remote `codeuncode-test` D1 + R2.
 
 ```sh
-cross-env NODE_ENV=production PAYLOAD_SECRET=ignore CLOUDFLARE_ENV=beta \
+cross-env NODE_ENV=production PAYLOAD_SECRET=ignore CLOUDFLARE_ENV=test \
   pnpm exec tsx scripts/migration/import-new.ts
 ```
 
@@ -246,14 +246,14 @@ Projects → Services → Partners → Globals.
 ## Step 3: verify
 
 ```sh
-# Count docs on beta (REST is fine, no auth needed for public reads)
-curl -s "https://cms-beta.codeuncode.com/api/services?limit=0" | jq .totalDocs
-curl -s "https://cms-beta.codeuncode.com/api/projects?limit=0" | jq .totalDocs
-curl -s "https://cms-beta.codeuncode.com/api/media?limit=0"    | jq .totalDocs
+# Count docs on test (REST is fine, no auth needed for public reads)
+curl -s "https://test-cms.codeuncode.com/api/services?limit=0" | jq .totalDocs
+curl -s "https://test-cms.codeuncode.com/api/projects?limit=0" | jq .totalDocs
+curl -s "https://test-cms.codeuncode.com/api/media?limit=0"    | jq .totalDocs
 # ...should match meta.json counts in the export
 ```
 
-Browse `https://beta.codeuncode.com/` — real content should render.
+Browse `https://test.codeuncode.com/` — real content should render.
 
 ## Known gaps / limitations
 

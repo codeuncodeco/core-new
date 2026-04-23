@@ -20,7 +20,8 @@
     "migrate:prod": "cross-env NODE_OPTIONS=--no-deprecation payload migrate --disable-confirm",
     "migration:export": "node scripts/migration/export-old.mjs",
     "migration:import:local": "cross-env CLOUDFLARE_ENV=local NODE_OPTIONS=--no-deprecation tsx scripts/migration/import-new.ts",
-    "migration:import:beta": "cross-env NODE_ENV=production PAYLOAD_SECRET=ignore CLOUDFLARE_ENV=beta NODE_OPTIONS=--no-deprecation tsx scripts/migration/import-new.ts",
+    "migration:import:test": "cross-env NODE_ENV=production PAYLOAD_SECRET=ignore CLOUDFLARE_ENV=test NODE_OPTIONS=--no-deprecation tsx scripts/migration/import-new.ts",
+    "migration:import:live": "cross-env NODE_ENV=production PAYLOAD_SECRET=ignore CLOUDFLARE_ENV=live NODE_OPTIONS=--no-deprecation tsx scripts/migration/import-new.ts",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview --env=$CLOUDFLARE_ENV",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"

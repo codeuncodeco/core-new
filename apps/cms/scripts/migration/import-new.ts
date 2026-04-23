@@ -19,7 +19,8 @@ import 'dotenv/config'
  *
  * Usage (from apps/cms/):
  *   CLOUDFLARE_ENV=local  tsx scripts/migration/import-new.ts --in=../../migration/export
- *   CLOUDFLARE_ENV=beta   NODE_ENV=production PAYLOAD_SECRET=ignore tsx scripts/migration/import-new.ts
+ *   CLOUDFLARE_ENV=test   NODE_ENV=production PAYLOAD_SECRET=ignore tsx scripts/migration/import-new.ts
+ *   CLOUDFLARE_ENV=live   NODE_ENV=production PAYLOAD_SECRET=ignore tsx scripts/migration/import-new.ts
  *
  * Flags:
  *   --in=<path>      Input dir. Default: ../../migration/export (repo root).

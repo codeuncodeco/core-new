@@ -1,7 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "cu-core",
   "account_id": "9aa603db8b4ff3924b801a2c0f0c49fb",
   "compatibility_date": "2025-08-15",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -40,30 +39,58 @@
         }
       ]
     },
-    // Pre-cutover public env. Deploys with `--env=beta`. At Phase 6 we
-    // add env.production claiming the `cu-core` worker name +
-    // cms.codeuncode.com route from old-core.
-    "beta": {
-      "name": "cu-core-beta",
+    // Remote pre-prod. Deploys with `--env=test`. test-cms.codeuncode.com.
+    "test": {
+      "name": "codeuncode-cms-test",
       "services": [],
-      "routes": [{ "pattern": "cms-beta.codeuncode.com", "custom_domain": true }],
+      "routes": [{ "pattern": "test-cms.codeuncode.com", "custom_domain": true }],
       "vars": {
-        "WEB_URL": "https://beta.codeuncode.com",
-        "CMS_URL": "https://cms-beta.codeuncode.com"
+        "WEB_URL": "https://test.codeuncode.com",
+        "CMS_URL": "https://test-cms.codeuncode.com"
       },
       "d1_databases": [
         {
           "binding": "D1",
-          "database_name": "cu-core-staging",
-          "database_id": "65355fa8-c96f-4ff0-9bd6-48a1861ac3f7",
+          "database_name": "codeuncode-test",
+          "database_id": "97df08dc-07ad-4bfb-a89e-fd1156758e68",
           "remote": true
         }
       ],
       "r2_buckets": [
         {
           "binding": "R2",
-          "bucket_name": "cu-core-staging",
-          "preview_bucket_name": "cu-core-staging",
+          "bucket_name": "codeuncode-test",
+          "preview_bucket_name": "codeuncode-test",
+          "remote": true
+        }
+      ],
+      "observability": {
+        "enabled": true
+      }
+    },
+    // Remote prod. Deploys with `--env=live`. cms.codeuncode.com.
+    // Routes intentionally omitted until Phase C cutover — until then the
+    // worker serves only on its workers.dev URL so old-core keeps serving prod.
+    "live": {
+      "name": "codeuncode-cms",
+      "services": [],
+      "vars": {
+        "WEB_URL": "https://codeuncode.com",
+        "CMS_URL": "https://cms.codeuncode.com"
+      },
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_name": "codeuncode-live",
+          "database_id": "93d25db3-4c77-4c24-8abd-d4ccc83df49e",
+          "remote": true
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "codeuncode-live",
+          "preview_bucket_name": "codeuncode-live",
           "remote": true
         }
       ],
