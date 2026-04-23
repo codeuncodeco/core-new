@@ -16,11 +16,15 @@ pnpm run migration:export
 # 2. (optional) Rehearse against local miniflare first
 pnpm run migration:import:local
 
-# 3. Import into test remote
+# 3. Import into test remote (rehearsal)
 pnpm run migration:import:test
 
 # 4. Verify
 curl -s "https://cms-test.codeuncode.com/api/services?limit=0" | jq .totalDocs
+
+# 5. When ready for Phase C cutover, import into live
+pnpm run migration:import:live
+curl -s "https://cms.codeuncode.com/api/services?limit=0" | jq .totalDocs
 ```
 
 Detailed steps + flags + gotchas follow below.
@@ -62,6 +66,11 @@ pnpm run migration:import:local -- --mode=append   # default is --mode=replace
 # Ingest into test remote
 pnpm run migration:import:test
 pnpm run migration:import:test -- --dry-run
+
+# Ingest into live remote (Phase C cutover — rehearse on test first)
+pnpm run migration:import:live
+pnpm run migration:import:live -- --dry-run
+pnpm run migration:import:live -- --only=media
 ```
 
 ### Seed / wipe
@@ -229,7 +238,19 @@ cross-env NODE_ENV=production PAYLOAD_SECRET=ignore CLOUDFLARE_ENV=test \
   pnpm exec tsx scripts/migration/import-new.ts
 ```
 
-Or via the npm script (see below).
+Or via the npm script: `pnpm run migration:import:test`.
+
+### Option C — import into live remote (Phase C cutover)
+
+Same as Option B but with `CLOUDFLARE_ENV=live`, binding to `codeuncode-live`
+D1 + R2. Run `:test` first to catch issues before touching prod.
+
+```sh
+cross-env NODE_ENV=production PAYLOAD_SECRET=ignore CLOUDFLARE_ENV=live \
+  pnpm exec tsx scripts/migration/import-new.ts
+```
+
+Or via the npm script: `pnpm run migration:import:live`.
 
 ### Flags
 
