@@ -28,14 +28,13 @@
       },
       "routes": [{ "pattern": "test.codeuncode.com", "custom_domain": true }]
     },
-    // Remote prod. codeuncode.com. Routes omitted until Phase C cutover —
-    // until then this worker serves only on its workers.dev URL so old-core
-    // keeps serving prod.
+    // Remote prod. codeuncode.com.
     "live": {
       "name": "codeuncode-web",
       "vars": {
         "PUBLIC_CMS_URL": "https://cms.codeuncode.com"
-      }
+      },
+      "routes": [{ "pattern": "codeuncode.com", "custom_domain": true }]
     }
   }
 }
