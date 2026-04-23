@@ -50,6 +50,8 @@ pnpm run migrate:prod                     # targets whatever wrangler env is act
 
 ### Content migration (collections + media)
 
+.
+
 ```sh
 # Dump published content + media from old-core prod into migration/export/
 pnpm run migration:export
