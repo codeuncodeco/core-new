@@ -93,7 +93,7 @@ Public API returns only published docs for drafts-enabled collections, which is 
 
 ### Prerequisites
 
-- New core-new worker already deployed to test (test-cms.codeuncode.com).
+- New core-new worker already deployed to test (cms-test.codeuncode.com).
 - Test D1 has all collections migrated — schema matches what the export expects.
 - Test R2 bucket (`codeuncode-test`) is empty or known-to-not-conflict.
 - `PAYLOAD_SECRET` + `SEED_SECRET` env vars known.
@@ -157,7 +157,7 @@ D1 schema stores these as plain text columns, Payload accepts them if passed exp
 3. **Test rehearsal.**
    - Wipe test D1 + R2: `pnpm --filter cu-core exec wrangler d1 execute D1 --remote --command "DELETE FROM ..."` (or export + restore fresh).
    - `node migration/scripts/import-new.mjs --target=test`
-   - Spot-check test.codeuncode.com + test-cms.codeuncode.com — all content visible.
+   - Spot-check test.codeuncode.com + cms-test.codeuncode.com — all content visible.
 
 4. **Cutover — live.**
    - `env.live` already exists in `apps/cms/wrangler.jsonc` + `apps/web/wrangler.jsonc`. Add `cms.codeuncode.com` / `codeuncode.com` routes to those blocks now (they were intentionally omitted until cutover). See `docs/move.md` Phase C.

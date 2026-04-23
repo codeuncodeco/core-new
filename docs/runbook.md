@@ -29,7 +29,7 @@ Commit the wrangler.jsonc change (D1 id) so CF Workers Builds picks it up on pus
 Add two **proxied** DNS records. Target doesn't matter — the worker's `custom_domain` binding takes over after first deploy. Placeholder target `192.0.2.1` is fine, or use `@` CNAME.
 
 - `test.codeuncode.com` — CNAME, proxied
-- `test-cms.codeuncode.com` — CNAME, proxied
+- `cms-test.codeuncode.com` — CNAME, proxied
 
 ### A3. Create `codeuncode-cms-test` worker (dash)
 
@@ -81,15 +81,15 @@ Actually, double-check: the existing `build` script is `pnpm run migrate:prod &&
 ### A7. Bootstrap test env
 
 ```sh
-# Browse to https://test-cms.codeuncode.com/admin → create first admin user.
+# Browse to https://cms-test.codeuncode.com/admin → create first admin user.
 
 # Seed content
-curl "https://test-cms.codeuncode.com/seed?secret=$SEED_SECRET"
+curl "https://cms-test.codeuncode.com/seed?secret=$SEED_SECRET"
 ```
 
 ### A8. Smoke test
 
-- `https://test-cms.codeuncode.com/admin` loads, you can log in.
+- `https://cms-test.codeuncode.com/admin` loads, you can log in.
 - `https://test.codeuncode.com/` renders public site with seeded partners etc.
 - From admin, open a Partner/Service/Project with live preview — iframe updates on edit.
 

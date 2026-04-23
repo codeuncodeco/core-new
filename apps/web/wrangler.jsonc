@@ -24,7 +24,7 @@
     "test": {
       "name": "codeuncode-web-test",
       "vars": {
-        "PUBLIC_CMS_URL": "https://test-cms.codeuncode.com"
+        "PUBLIC_CMS_URL": "https://cms-test.codeuncode.com"
       },
       "routes": [{ "pattern": "test.codeuncode.com", "custom_domain": true }]
     },

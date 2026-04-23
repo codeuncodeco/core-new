@@ -1,7 +1,7 @@
 # Content migration runbook
 
 Copy published content from old-core prod (`cms.codeuncode.com`) into new-core's
-test CMS (`test-cms.codeuncode.com`). Media files travel too.
+test CMS (`cms-test.codeuncode.com`). Media files travel too.
 
 Plan (context): [`docs/content-migration.md`](../../../../docs/content-migration.md).
 
@@ -20,7 +20,7 @@ pnpm run migration:import:local
 pnpm run migration:import:test
 
 # 4. Verify
-curl -s "https://test-cms.codeuncode.com/api/services?limit=0" | jq .totalDocs
+curl -s "https://cms-test.codeuncode.com/api/services?limit=0" | jq .totalDocs
 ```
 
 Detailed steps + flags + gotchas follow below.
@@ -74,14 +74,14 @@ curl http://localhost:3000/seed
 curl "http://localhost:3000/seed?only=partners"
 
 # Seed against test remote (SEED_SECRET required)
-curl "https://test-cms.codeuncode.com/seed?secret=$SEED_SECRET"
-curl "https://test-cms.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"
+curl "https://cms-test.codeuncode.com/seed?secret=$SEED_SECRET"
+curl "https://cms-test.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"
 
 # Wipe every seedable collection (local)
 curl http://localhost:3000/wipe
 
 # Wipe test
-curl "https://test-cms.codeuncode.com/wipe?secret=$SEED_SECRET"
+curl "https://cms-test.codeuncode.com/wipe?secret=$SEED_SECRET"
 ```
 
 Services/Categories/Tags must be seeded together (relational deps) — the
@@ -116,7 +116,7 @@ pnpm exec wrangler r2 object list codeuncode-test
 ### Verification (public REST API)
 
 ```sh
-CMS=https://test-cms.codeuncode.com
+CMS=https://cms-test.codeuncode.com
 
 for slug in categories tags services projects brands partners media; do
   n=$(curl -s "$CMS/api/$slug?limit=0" | jq .totalDocs)
@@ -128,7 +128,7 @@ done
 
 ```sh
 # Full redo: wipe test, re-import (idempotent default is --mode=replace)
-curl "https://test-cms.codeuncode.com/wipe?secret=$SEED_SECRET"
+curl "https://cms-test.codeuncode.com/wipe?secret=$SEED_SECRET"
 pnpm run migration:import:test
 
 # Redo only media (say the import crashed mid-run)
@@ -146,7 +146,7 @@ pnpm run migration:import:test -- --only=media
 
 **Not exported from old-core:** partners — the collection wasn't deployed to
 old-core prod. After import, seed the default 4 partners on new-core with
-`curl "https://test-cms.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"`.
+`curl "https://cms-test.codeuncode.com/seed?only=partners&secret=$SEED_SECRET"`.
 
 ## What doesn't
 
@@ -247,9 +247,9 @@ Projects → Services → Partners → Globals.
 
 ```sh
 # Count docs on test (REST is fine, no auth needed for public reads)
-curl -s "https://test-cms.codeuncode.com/api/services?limit=0" | jq .totalDocs
-curl -s "https://test-cms.codeuncode.com/api/projects?limit=0" | jq .totalDocs
-curl -s "https://test-cms.codeuncode.com/api/media?limit=0"    | jq .totalDocs
+curl -s "https://cms-test.codeuncode.com/api/services?limit=0" | jq .totalDocs
+curl -s "https://cms-test.codeuncode.com/api/projects?limit=0" | jq .totalDocs
+curl -s "https://cms-test.codeuncode.com/api/media?limit=0"    | jq .totalDocs
 # ...should match meta.json counts in the export
 ```
 

@@ -258,7 +258,7 @@ Batches in order:
 The original plan called for claiming the `cu-core` / `cu-web` worker names from old-core during cutover. We instead renamed new-core's deployable resources under the `codeuncode-*` scheme (see [`docs/move.md`](./move.md)), which removes the namespace race and makes cutover a pure DNS/route swap.
 
 See `docs/move.md` for:
-- Test env rename (`beta` → `test`, new `codeuncode-test` D1/R2, worker `codeuncode-cms-test` / `codeuncode-web-test` at `test-cms.codeuncode.com` / `test.codeuncode.com`).
+- Test env rename (`beta` → `test`, new `codeuncode-test` D1/R2, worker `codeuncode-cms-test` / `codeuncode-web-test` at `cms-test.codeuncode.com` / `test.codeuncode.com`).
 - Live env provisioning (`codeuncode-live` D1/R2, worker `codeuncode-cms` / `codeuncode-web`).
 - Cutover sequence (content migration + release routes from old-core + claim them on new-core's `env.live`).
 

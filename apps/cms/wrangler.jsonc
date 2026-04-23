@@ -39,14 +39,14 @@
         }
       ]
     },
-    // Remote pre-prod. Deploys with `--env=test`. test-cms.codeuncode.com.
+    // Remote pre-prod. Deploys with `--env=test`. cms-test.codeuncode.com.
     "test": {
       "name": "codeuncode-cms-test",
       "services": [],
-      "routes": [{ "pattern": "test-cms.codeuncode.com", "custom_domain": true }],
+      "routes": [{ "pattern": "cms-test.codeuncode.com", "custom_domain": true }],
       "vars": {
         "WEB_URL": "https://test.codeuncode.com",
-        "CMS_URL": "https://test-cms.codeuncode.com"
+        "CMS_URL": "https://cms-test.codeuncode.com"
       },
       "d1_databases": [
         {
