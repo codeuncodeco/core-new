@@ -23,33 +23,33 @@ Local dev uses miniflare (file-based D1 + R2 emulation). No remote resources tou
 
 ## Environments
 
-| Env | CMS | Web | D1 | R2 |
-|---|---|---|---|---|
-| local | localhost:3000 | localhost:4321 | miniflare | miniflare |
-| beta | cms-beta.codeuncode.com | beta.codeuncode.com | `cu-core-staging` | `cu-core-staging` |
-| prod (Phase 6) | cms.codeuncode.com | codeuncode.com | `cu-core-prod` | `cu-core-prod` |
+| Env            | CMS                     | Web                 | D1                | R2                |
+| -------------- | ----------------------- | ------------------- | ----------------- | ----------------- |
+| local          | localhost:3000          | localhost:4321      | miniflare         | miniflare         |
+| beta           | cms-beta.codeuncode.com | beta.codeuncode.com | `cu-core-staging` | `cu-core-staging` |
+| prod (Phase 6) | cms.codeuncode.com      | codeuncode.com      | `cu-core-prod`    | `cu-core-prod`    |
 
 ## Environment variables
 
 ### `apps/cms`
 
-| Var | When | Where set (local) | Where set (remote) | Purpose |
-|---|---|---|---|---|
-| `PAYLOAD_SECRET` | runtime | `.env` | `wrangler secret put PAYLOAD_SECRET` | Signs auth JWTs + cookies. Required to boot. |
-| `SEED_SECRET` | runtime | `.env` | `wrangler secret put SEED_SECRET` | Guards `/seed` + `/wipe` in production. Not checked in local dev. |
-| `WEB_URL` | runtime | `.env` | `wrangler.jsonc vars` | Used by `admin.livePreview.url` to build the preview iframe URL. Baked into prod via wrangler vars; local dev reads `.env`. |
-| `RESEND_API_KEY` | runtime | `.env` | `wrangler secret put RESEND_API_KEY` | Transactional email (wired in Phase 4). |
-| `WEB_DEPLOY_HOOK_URL` | runtime | `.env` (often blank) | `wrangler secret put` | Triggers a web rebuild on content changes. Optional. |
-| `NODE_ENV` | runtime (implicit) | — | Set to `production` by Next.js build | Gates `push: true` local vs `push: false` in prod inside `payload.config.ts`. Never set manually. |
-| `CLOUDFLARE_ENV` | deploy scripts | — | passed on `wrangler deploy --env=...` | Picks the wrangler env block during deploy. |
+| Var                   | When                     | Where set (local)    | Where set (remote)                    | Purpose                                                                                                                     |
+| --------------------- | ------------------------ | -------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `PAYLOAD_SECRET`      | runtime and build/deploy | `.env`               | `wrangler secret put PAYLOAD_SECRET`  | Signs auth JWTs + cookies. Required to boot.                                                                                |
+| `SEED_SECRET`         | runtime                  | `.env`               | `wrangler secret put SEED_SECRET`     | Guards `/seed` + `/wipe` in production. Not checked in local dev.                                                           |
+| `WEB_URL`             | runtime                  | `.env`               | `wrangler.jsonc vars`                 | Used by `admin.livePreview.url` to build the preview iframe URL. Baked into prod via wrangler vars; local dev reads `.env`. |
+| `RESEND_API_KEY`      | runtime                  | `.env`               | `wrangler secret put RESEND_API_KEY`  | Transactional email (wired in Phase 4).                                                                                     |
+| `WEB_DEPLOY_HOOK_URL` | runtime                  | `.env` (often blank) | `wrangler secret put`                 | Triggers a web rebuild on content changes. Optional.                                                                        |
+| `NODE_ENV`            | runtime (implicit)       | —                    | Set to `production` by Next.js build  | Gates `push: true` local vs `push: false` in prod inside `payload.config.ts`. Never set manually.                           |
+| `CLOUDFLARE_ENV`      | deploy scripts           | —                    | passed on `wrangler deploy --env=...` | Picks the wrangler env block during deploy.                                                                                 |
 
 Build time for CMS: none of the above are needed during `next build` / `opennextjs-cloudflare build` itself. Everything is consumed at worker runtime.
 
 ### `apps/web`
 
-| Var | When | Where set (local) | Where set (remote) | Purpose |
-|---|---|---|---|---|
-| `PUBLIC_CMS_URL` | **both** build + runtime | `.env` | `wrangler.jsonc vars` | (a) baked into client JS bundle at build time (used by `live-preview.ts` to match `postMessage` origins); (b) read at runtime by SSR `/preview/*` routes. Must be set in both places. |
+| Var              | When                     | Where set (local) | Where set (remote)    | Purpose                                                                                                                                                                               |
+| ---------------- | ------------------------ | ----------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUBLIC_CMS_URL` | **both** build + runtime | `.env`            | `wrangler.jsonc vars` | (a) baked into client JS bundle at build time (used by `live-preview.ts` to match `postMessage` origins); (b) read at runtime by SSR `/preview/*` routes. Must be set in both places. |
 
 Astro inlines `PUBLIC_*` vars into the client bundle at build time, so changing `PUBLIC_CMS_URL` on the deployed worker via `wrangler secret` without rebuilding leaves stale values in the client JS. Rebuild + redeploy after changing.
 
