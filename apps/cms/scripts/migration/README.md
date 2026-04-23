@@ -50,6 +50,8 @@ pnpm run migrate:prod                     # targets whatever wrangler env is act
 
 ### Content migration (collections + media)
 
+.
+
 ```sh
 # Dump published content + media from old-core prod into migration/export/
 pnpm run migration:export
@@ -145,7 +147,6 @@ pnpm exec wrangler d1 execute D1 --remote --env test \
   --command "DELETE FROM media;"
 pnpm run migration:import:test -- --only=media
 ```
-
 
 ## What gets migrated
 
