@@ -69,11 +69,10 @@
       }
     },
     // Remote prod. Deploys with `--env=live`. cms.codeuncode.com.
-    // Routes intentionally omitted until Phase C cutover — until then the
-    // worker serves only on its workers.dev URL so old-core keeps serving prod.
     "live": {
       "name": "codeuncode-cms",
       "services": [],
+      "routes": [{ "pattern": "cms.codeuncode.com", "custom_domain": true }],
       "vars": {
         "WEB_URL": "https://codeuncode.com",
         "CMS_URL": "https://cms.codeuncode.com"
