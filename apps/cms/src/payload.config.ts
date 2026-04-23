@@ -70,6 +70,8 @@ export default buildConfig({
   // CORS/CSRF allowlist — otherwise emits path-only URLs that mail clients
   // mangle into `https://admin/reset/<token>`.
   serverURL: process.env.CMS_URL || 'http://localhost:3000',
+  cors: [process.env.WEB_URL || 'http://localhost:4321'],
+  csrf: [process.env.WEB_URL || 'http://localhost:4321'],
   admin: {
     user: Users.slug,
     importMap: {
