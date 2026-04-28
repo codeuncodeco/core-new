@@ -63,6 +63,18 @@ export const Proposals: CollectionConfig = {
     delete: authenticated,
   },
   fields: [
+    // --- form-level enhancements (no UI; injects scroll-to-error and
+    //     a small CSS fix for truncated error labels) ---
+    {
+      name: 'formEnhancements',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '@/components/ProposalFormEnhancements#ProposalFormEnhancements',
+        },
+      },
+    },
+
     // --- duplicate action (button — appears at the top of the form) ---
     {
       name: 'duplicateAction',

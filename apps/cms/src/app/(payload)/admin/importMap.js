@@ -23,6 +23,7 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { FetchCoverButton as FetchCoverButton_6eb7f092685f4f7696e4d456edbe6d14 } from '@/components/FetchCoverButton'
 import { ArrayRowLabel as ArrayRowLabel_d959508a9af4112312c6144edad7c9f3 } from '@/components/ArrayRowLabel'
+import { ProposalFormEnhancements as ProposalFormEnhancements_2a129726a2b911ff3d5e625f22aaf44d } from '@/components/ProposalFormEnhancements'
 import { DuplicateProposalButton as DuplicateProposalButton_4628bb90056bcd5f1147f0e1709bf4fe } from '@/components/DuplicateProposalButton'
 import { ColorField as ColorField_11068df104b0f13b5fa75bd836b63db6 } from '@/components/ColorField'
 import { CostTotalDisplay as CostTotalDisplay_9562238722a6c638e807cc90c2104621 } from '@/components/CostTotalDisplay'
@@ -56,6 +57,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/FetchCoverButton#FetchCoverButton": FetchCoverButton_6eb7f092685f4f7696e4d456edbe6d14,
   "@/components/ArrayRowLabel#ArrayRowLabel": ArrayRowLabel_d959508a9af4112312c6144edad7c9f3,
+  "@/components/ProposalFormEnhancements#ProposalFormEnhancements": ProposalFormEnhancements_2a129726a2b911ff3d5e625f22aaf44d,
   "@/components/DuplicateProposalButton#DuplicateProposalButton": DuplicateProposalButton_4628bb90056bcd5f1147f0e1709bf4fe,
   "@/components/ColorField#ColorField": ColorField_11068df104b0f13b5fa75bd836b63db6,
   "@/components/CostTotalDisplay#CostTotalDisplay": CostTotalDisplay_9562238722a6c638e807cc90c2104621,
