@@ -26,13 +26,14 @@ const lifecycleAndNotes: CollectionBeforeChangeHook = ({ data, originalDoc, req 
   return data
 }
 
+
 export const Proposals: CollectionConfig = {
   slug: 'proposals',
   admin: {
     useAsTitle: 'internalTitle',
     defaultColumns: ['internalTitle', 'client', 'status', 'sentAt', 'lastContactAt'],
     description:
-      'Client proposals — authored here, rendered on apps/web, exported to PDF via the browser.',
+      'Client proposals — authored here, rendered on apps/web, exported to PDF via the browser. Use the in-form "Duplicate this proposal" button to copy — the default Duplicate action will hit the unique-slug constraint.',
   },
   versions: { drafts: true, maxPerDoc: 0 },
   hooks: {
@@ -47,6 +48,17 @@ export const Proposals: CollectionConfig = {
     delete: authenticated,
   },
   fields: [
+    // --- duplicate action (button — appears at the top of the form) ---
+    {
+      name: 'duplicateAction',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '@/components/DuplicateProposalButton#DuplicateProposalButton',
+        },
+      },
+    },
+
     // --- identity ---
     {
       name: 'internalTitle',
@@ -86,7 +98,16 @@ export const Proposals: CollectionConfig = {
       relationTo: 'media',
       admin: { description: "Falls back to the client's defaultLogo if blank." },
     },
-    { name: 'accentColor', type: 'text', defaultValue: '#f97316' },
+    {
+      name: 'accentColor',
+      type: 'text',
+      defaultValue: '#f97316',
+      admin: {
+        components: {
+          Field: '@/components/ColorField#ColorField',
+        },
+      },
+    },
     {
       name: 'fontFamily',
       type: 'select',
@@ -238,6 +259,7 @@ export const Proposals: CollectionConfig = {
     {
       name: 'sentMethod',
       type: 'select',
+      hasMany: true,
       options: [
         { label: 'Email', value: 'email' },
         { label: 'WhatsApp', value: 'whatsapp' },

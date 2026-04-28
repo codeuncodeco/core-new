@@ -488,7 +488,7 @@ export interface Client {
   createdAt: string;
 }
 /**
- * Client proposals — authored here, rendered on apps/web, exported to PDF via the browser.
+ * Client proposals — authored here, rendered on apps/web, exported to PDF via the browser. Use the in-form "Duplicate this proposal" button to copy — the default Duplicate action will hit the unique-slug constraint.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "proposals".
@@ -599,7 +599,7 @@ export interface Proposal {
         id?: string | null;
       }[]
     | null;
-  sentMethod?: ('email' | 'whatsapp' | 'in-person' | 'other') | null;
+  sentMethod?: ('email' | 'whatsapp' | 'in-person' | 'other')[] | null;
   /**
    * Update on any back-and-forth. Drives the "cold" auto-flag (3 weeks of silence → cold).
    */

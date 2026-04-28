@@ -22,6 +22,8 @@ import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997e
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { FetchCoverButton as FetchCoverButton_6eb7f092685f4f7696e4d456edbe6d14 } from '@/components/FetchCoverButton'
+import { DuplicateProposalButton as DuplicateProposalButton_4628bb90056bcd5f1147f0e1709bf4fe } from '@/components/DuplicateProposalButton'
+import { ColorField as ColorField_11068df104b0f13b5fa75bd836b63db6 } from '@/components/ColorField'
 import { R2ClientUploadHandler as R2ClientUploadHandler_85cc02ed84006fcc91d3aff39dda669d } from '@payloadcms/storage-r2/client'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -50,6 +52,8 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/components/FetchCoverButton#FetchCoverButton": FetchCoverButton_6eb7f092685f4f7696e4d456edbe6d14,
+  "@/components/DuplicateProposalButton#DuplicateProposalButton": DuplicateProposalButton_4628bb90056bcd5f1147f0e1709bf4fe,
+  "@/components/ColorField#ColorField": ColorField_11068df104b0f13b5fa75bd836b63db6,
   "@payloadcms/storage-r2/client#R2ClientUploadHandler": R2ClientUploadHandler_85cc02ed84006fcc91d3aff39dda669d,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

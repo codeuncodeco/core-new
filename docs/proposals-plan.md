@@ -233,6 +233,12 @@ Every save creates a new Payload version. The URL supports `?v=<versionId>` to r
 - `/proposals/<slug>?v=<id>` → that exact version.
 - We'll capture the version id at the moment of "send" so we can always reproduce the sent state.
 
+### Version label rendered into the HTML
+
+The renderer prints a small version marker into the HTML itself (e.g. in the header next to the date, or in the footer). Because it's part of the rendered DOM, it carries through to the printed PDF for free — no separate plumbing.
+
+What the marker shows: a short, stable version identifier — Payload version IDs are long opaque strings, so we'll show a human-friendly form (e.g. `v3` derived from the position in the version history, or `28 Apr 2026 22:21` from the version timestamp). Final shape: TBD when we build the renderer; the simplest first cut is the version's `updatedAt` formatted as a short timestamp.
+
 ## Authoring UX — edit-while-viewing
 
 Goal: edit a proposal while looking at the rendered page, not in a disconnected form.
