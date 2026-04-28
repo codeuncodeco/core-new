@@ -1,13 +1,24 @@
 'use client'
 
-import { useField } from '@payloadcms/ui'
+import { useAllFormFields, useForm } from '@payloadcms/ui'
 import { useState } from 'react'
 
-type Note = {
+type Author =
+  | number
+  | string
+  | { id?: number | string; email?: string; name?: string }
+  | null
+  | undefined
+
+type RowData = {
   note?: string
-  author?: number | string | { id?: number | string; email?: string } | null
+  author?: Author
   createdAt?: string | null
-  id?: string
+}
+
+type Props = {
+  path?: string
+  schemaPath?: string
 }
 
 const formatTimestamp = (iso: string | null | undefined): string => {
@@ -23,43 +34,69 @@ const formatTimestamp = (iso: string | null | undefined): string => {
   })
 }
 
-const authorLabel = (a: Note['author']): string => {
+const authorLabel = (a: Author): string => {
   if (!a) return ''
   if (typeof a === 'number' || typeof a === 'string') return `User #${a}`
-  return a.email ?? `User #${a.id ?? '?'}`
+  return a.name ?? a.email ?? `User #${a.id ?? '?'}`
 }
 
 // Replaces the default array-field UI for proposal notes with a chronological
-// feed. Add via the textarea at the top; existing notes show below, newest
-// first. author and createdAt are auto-stamped on save (collection
-// beforeChange hook), so the user only types the note body.
-export const NotesFeed = () => {
-  const { value, setValue } = useField<Note[]>({ path: 'notes' })
+// feed. Existing rows are reconstructed from the form's flat state by
+// matching `<arrayPath>.<index>.<subfield>` paths. Adds use addFieldRow with
+// subFieldState so the new row is created with its body already populated.
+export const NotesFeed = ({ path = 'notes', schemaPath }: Props) => {
+  const [fields] = useAllFormFields()
+  const { addFieldRow, removeFieldRow } = useForm()
   const [draft, setDraft] = useState('')
 
-  const notes = Array.isArray(value) ? value : []
+  // Reconstruct rows from path → state map.
+  const pathPrefix = `${path}.`
+  const rows: Map<number, RowData> = new Map()
+  for (const [p, state] of Object.entries(fields ?? {})) {
+    if (!p.startsWith(pathPrefix)) continue
+    const rest = p.slice(pathPrefix.length)
+    const m = /^(\d+)\.(.+)$/.exec(rest)
+    if (!m) continue
+    const idx = Number(m[1])
+    const subfield = m[2]
+    if (!rows.has(idx)) rows.set(idx, {})
+    const entry = rows.get(idx) as Record<string, unknown>
+    entry[subfield as string] = (state as { value?: unknown })?.value
+  }
+
+  const indices = [...rows.keys()].sort((a, b) => a - b)
+
+  // Display newest first; unsaved rows (no createdAt) sort to the top so
+  // they're visible right after the user clicks Add.
+  const sorted = indices
+    .map((idx) => ({ data: rows.get(idx) as RowData, originalIndex: idx }))
+    .sort((a, b) => {
+      const aTime = a.data.createdAt ? Date.parse(a.data.createdAt) : Infinity
+      const bTime = b.data.createdAt ? Date.parse(b.data.createdAt) : Infinity
+      return bTime - aTime
+    })
 
   const addNote = () => {
     const text = draft.trim()
     if (!text) return
-    setValue([...(notes ?? []), { note: text }])
+    addFieldRow({
+      path,
+      schemaPath,
+      rowIndex: indices.length,
+      subFieldState: {
+        // Pre-populate the new row's `note` body. author + createdAt are
+        // stamped server-side by the proposals beforeChange hook.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        note: { value: text, initialValue: text, valid: true } as any,
+      },
+    })
     setDraft('')
   }
 
-  const deleteAt = (originalIndex: number) => {
+  const deleteAt = (idx: number) => {
     if (!confirm('Delete this note?')) return
-    setValue(notes.filter((_, i) => i !== originalIndex))
+    removeFieldRow({ path, rowIndex: idx })
   }
-
-  // Sort newest first. Unsaved notes (no createdAt) sort to the top so they
-  // visibly appear after the user clicks Add but before the next save.
-  const sorted = notes
-    .map((n, i) => ({ note: n, originalIndex: i }))
-    .sort((a, b) => {
-      const aTime = a.note.createdAt ? Date.parse(a.note.createdAt) : Infinity
-      const bTime = b.note.createdAt ? Date.parse(b.note.createdAt) : Infinity
-      return bTime - aTime
-    })
 
   return (
     <div className="field-type" style={{ marginBottom: '2rem' }}>
@@ -167,11 +204,11 @@ export const NotesFeed = () => {
         </p>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {sorted.map(({ note, originalIndex }, displayIndex) => {
-            const isUnsaved = !note.createdAt
+          {sorted.map(({ data, originalIndex }, displayIndex) => {
+            const isUnsaved = !data.createdAt
             return (
               <li
-                key={note.id ?? `unsaved-${originalIndex}`}
+                key={originalIndex}
                 style={{
                   padding: '0.75rem 0.9rem',
                   border: `1px solid var(--theme-elevation-150)`,
@@ -196,8 +233,8 @@ export const NotesFeed = () => {
                   }}
                 >
                   <span>
-                    {formatTimestamp(note.createdAt)}
-                    {note.author ? ` · ${authorLabel(note.author)}` : ''}
+                    {formatTimestamp(data.createdAt)}
+                    {data.author ? ` · ${authorLabel(data.author)}` : ''}
                     {isUnsaved ? ' · unsaved' : ''}
                   </span>
                   <button
@@ -225,7 +262,7 @@ export const NotesFeed = () => {
                     lineHeight: 1.5,
                   }}
                 >
-                  {note.note ?? ''}
+                  {data.note ?? ''}
                 </p>
               </li>
             )
