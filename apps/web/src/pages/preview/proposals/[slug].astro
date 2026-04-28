@@ -1,0 +1,76 @@
+---
+// SSR preview variant of /proposals/<slug>. Fetches the draft (with the
+// editor's auth cookie) and, on each Live Preview postMessage from the
+// admin, re-renders with the in-form data merged on top of the fetched doc.
+export const prerender = false;
+
+import {
+  getProposalBySlugPreview,
+  getClientById,
+  getMediaById,
+} from "../../../lib/cms";
+import ProposalLayout from "../../../layouts/ProposalLayout.astro";
+import type { Proposal, Client, Media } from "@cms/payload-types";
+
+const { slug } = Astro.params;
+if (!slug) {
+  return new Response("Not Found", { status: 404 });
+}
+
+const cookie = Astro.request.headers.get("cookie");
+let proposal = await getProposalBySlugPreview(slug, cookie);
+
+// Live Preview posts the form's current state — merge it on top of whatever
+// we fetched. Relationship fields arrive as bare IDs; rehydrate the ones we
+// render (client → its logo Media).
+if (Astro.request.method === "POST") {
+  let incoming: Partial<Proposal> | null = null;
+  try {
+    incoming = (await Astro.request.json()) as Partial<Proposal>;
+  } catch {
+    incoming = null;
+  }
+  if (incoming) {
+    const merged = { ...(proposal ?? {}), ...incoming } as Proposal;
+
+    // Rehydrate `client` if it came in as a number.
+    if (typeof merged.client === "number") {
+      const c = await getClientById(merged.client, cookie);
+      if (c) merged.client = c;
+    }
+
+    // Rehydrate the client's logo if it's a bare ID (depth=1 may not have
+    // resolved it on the just-fetched Client).
+    if (
+      merged.client &&
+      typeof merged.client === "object" &&
+      typeof (merged.client as Client).logo === "number"
+    ) {
+      const logoId = (merged.client as Client).logo as unknown as number;
+      const logoMedia = await getMediaById(logoId, cookie);
+      if (logoMedia) {
+        (merged.client as Client).logo = logoMedia as Media;
+      }
+    }
+
+    proposal = merged;
+  }
+}
+
+if (!proposal) {
+  return new Response("Not Found", { status: 404 });
+}
+
+// Allow the CMS admin to embed this page in the Live Preview iframe.
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+Astro.response.headers.set(
+  "Content-Security-Policy",
+  "frame-ancestors 'self' https://cms.codeuncode.com https://cms-test.codeuncode.com http://localhost:3000",
+);
+---
+
+<ProposalLayout proposal={proposal} hideVersionLabel={true} />
+
+<script>
+  import "../../../scripts/live-preview";
+</script>

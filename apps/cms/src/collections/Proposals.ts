@@ -2,6 +2,8 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 
 const authenticated = ({ req: { user } }: { req: { user: unknown } }) => Boolean(user)
 
+const WEB_URL = process.env.WEB_URL || 'http://localhost:4321'
+
 // Auto-fill sentAt when status flips to 'sent', mirror lastContactAt to
 // sentAt on first send, and stamp newly-added notes with author + createdAt.
 const lifecycleAndNotes: CollectionBeforeChangeHook = ({ data, originalDoc, req }) => {
@@ -34,6 +36,19 @@ export const Proposals: CollectionConfig = {
     defaultColumns: ['internalTitle', 'client', 'status', 'sentAt', 'lastContactAt'],
     description:
       'Client proposals — authored here, rendered on apps/web, exported to PDF via the browser. Use the in-form "Duplicate this proposal" button to copy — the default Duplicate action will hit the unique-slug constraint.',
+    livePreview: {
+      url: ({ data }) => {
+        const slug = (data as { urlSlug?: string } | null)?.urlSlug
+        // No slug yet (unsaved doc) → land on a 404 placeholder; user has to
+        // save the proposal once before live preview becomes meaningful.
+        return `${WEB_URL}/preview/proposals/${slug ?? 'new'}`
+      },
+      breakpoints: [
+        { label: 'Mobile', name: 'mobile', width: 375, height: 667 },
+        { label: 'Tablet', name: 'tablet', width: 768, height: 1024 },
+        { label: 'Desktop', name: 'desktop', width: 1440, height: 900 },
+      ],
+    },
   },
   versions: { drafts: true, maxPerDoc: 0 },
   hooks: {
