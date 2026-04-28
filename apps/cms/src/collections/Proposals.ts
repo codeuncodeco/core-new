@@ -200,6 +200,13 @@ export const Proposals: CollectionConfig = {
         },
       ],
     },
+    {
+      name: 'costItemsTotal',
+      type: 'ui',
+      admin: {
+        components: { Field: '@/components/CostTotalDisplay#CostTotalDisplay' },
+      },
+    },
 
     // --- architecture ---
     {
