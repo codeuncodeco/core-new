@@ -1,0 +1,16 @@
+{
+  "name": "cu-cron",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --env=local",
+    "deploy": "wrangler deploy --env=$CLOUDFLARE_ENV",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251015.0",
+    "typescript": "5.7.3",
+    "wrangler": "~4.61.1"
+  }
+}
