@@ -249,12 +249,24 @@ export const Proposals: CollectionConfig = {
         }, 0)
         // Allow tiny float drift from manual entry (e.g. 33.33 + 33.33 + 33.34).
         if (Math.abs(sum - 100) < 0.01) return true
-        return `Payment terms must add up to 100% (currently ${sum}%). Adjust the share percents or remove all rows.`
+        const diff = 100 - sum
+        const off =
+          diff > 0
+            ? `short by ${Number(diff.toFixed(2))}%`
+            : `over by ${Number((-diff).toFixed(2))}%`
+        return `Share percents must add up to 100% — currently ${Number(sum.toFixed(2))}% (${off}). Adjust the rows, or remove all rows to drop the section.`
       },
       fields: [
         { name: 'milestone', type: 'text', required: true },
         { name: 'sharePercent', type: 'number', required: true },
       ],
+    },
+    {
+      name: 'paymentTermsTotal',
+      type: 'ui',
+      admin: {
+        components: { Field: '@/components/PaymentTermsTotalDisplay#PaymentTermsTotalDisplay' },
+      },
     },
 
     // --- lifecycle / tracking ---

@@ -26,6 +26,7 @@ import { ArrayRowLabel as ArrayRowLabel_d959508a9af4112312c6144edad7c9f3 } from 
 import { DuplicateProposalButton as DuplicateProposalButton_4628bb90056bcd5f1147f0e1709bf4fe } from '@/components/DuplicateProposalButton'
 import { ColorField as ColorField_11068df104b0f13b5fa75bd836b63db6 } from '@/components/ColorField'
 import { CostTotalDisplay as CostTotalDisplay_9562238722a6c638e807cc90c2104621 } from '@/components/CostTotalDisplay'
+import { PaymentTermsTotalDisplay as PaymentTermsTotalDisplay_97eaef24f3c2a71bb733cdf0f068cbc1 } from '@/components/PaymentTermsTotalDisplay'
 import { R2ClientUploadHandler as R2ClientUploadHandler_85cc02ed84006fcc91d3aff39dda669d } from '@payloadcms/storage-r2/client'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -58,6 +59,7 @@ export const importMap = {
   "@/components/DuplicateProposalButton#DuplicateProposalButton": DuplicateProposalButton_4628bb90056bcd5f1147f0e1709bf4fe,
   "@/components/ColorField#ColorField": ColorField_11068df104b0f13b5fa75bd836b63db6,
   "@/components/CostTotalDisplay#CostTotalDisplay": CostTotalDisplay_9562238722a6c638e807cc90c2104621,
+  "@/components/PaymentTermsTotalDisplay#PaymentTermsTotalDisplay": PaymentTermsTotalDisplay_97eaef24f3c2a71bb733cdf0f068cbc1,
   "@payloadcms/storage-r2/client#R2ClientUploadHandler": R2ClientUploadHandler_85cc02ed84006fcc91d3aff39dda669d,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
