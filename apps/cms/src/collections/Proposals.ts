@@ -241,6 +241,16 @@ export const Proposals: CollectionConfig = {
       name: 'paymentTerms',
       type: 'array',
       admin: { components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' } },
+      validate: (value: unknown) => {
+        if (!Array.isArray(value) || value.length === 0) return true
+        const sum = value.reduce((acc: number, row) => {
+          const n = Number((row as { sharePercent?: number | string })?.sharePercent ?? 0)
+          return acc + (Number.isFinite(n) ? n : 0)
+        }, 0)
+        // Allow tiny float drift from manual entry (e.g. 33.33 + 33.33 + 33.34).
+        if (Math.abs(sum - 100) < 0.01) return true
+        return `Payment terms must add up to 100% (currently ${sum}%). Adjust the share percents or remove all rows.`
+      },
       fields: [
         { name: 'milestone', type: 'text', required: true },
         { name: 'sharePercent', type: 'number', required: true },
