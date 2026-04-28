@@ -233,6 +233,38 @@ Every save creates a new Payload version. The URL supports `?v=<versionId>` to r
 - `/proposals/<slug>?v=<id>` → that exact version.
 - We'll capture the version id at the moment of "send" so we can always reproduce the sent state.
 
+## Authoring UX — edit-while-viewing
+
+Goal: edit a proposal while looking at the rendered page, not in a disconnected form.
+
+### v1 — Payload Live Preview (cheap, native)
+
+Payload ships a `livePreview` admin feature: the edit form sits on one side, an iframe of the rendered page on the other, and the iframe re-renders as you type. Already used on the `Projects` collection in this repo, so the pattern is proven.
+
+How it works:
+
+- Add `admin.livePreview.url` to the Proposals collection — points at `apps/web`'s preview route, e.g. `${WEB_URL}/preview/proposals/${data.urlSlug}`.
+- The preview route renders the proposal but listens for `payload-live-preview` postMessage events from the parent admin frame. Each edit in the form re-posts the latest form `data`; the route merges and re-renders client-side.
+- We get a fully styled, near-real-time preview of the rendered HTML next to the form. Format-toggle (mobile / tablet / desktop / print) is built into Payload's live preview chrome.
+
+This is what we'd build first. Estimated effort: small — a single Astro/React route on `apps/web` that subscribes to the postMessage, plus a one-line addition to the collection config.
+
+### v2 — true in-place editing (stretch)
+
+Click directly on text in the rendered page and edit it inline. Real WYSIWYG.
+
+Two ways to implement:
+
+1. **Edit-mode overlay on `apps/web`** — a `?edit=1` querystring on the proposal page renders fields as `contenteditable`, with click-to-edit affordances. On blur, posts updates back to Payload via the REST API (or the service binding). Requires an auth check against Payload's session cookie before showing the edit affordances.
+2. **Custom admin route** — a fully-bespoke page in `apps/cms` that renders the proposal layout with edit affordances and writes through Payload's local API. More work, but stays inside the admin's auth context (no cross-app session sharing to figure out).
+
+Trade-off vs. v1:
+
+- v1 (live preview) is two-pane (form left, render right) — you still type into form fields. v2 lets you click on the rendered text directly.
+- v1 is ~a day of work; v2 is multi-day, especially handling array fields (scope items, cost rows) which need add/remove/reorder UI baked into the rendered view.
+
+**Recommendation:** ship v1 first; revisit v2 only if v1 still feels too disconnected once we're using it daily.
+
 ## The bigger picture — Clients, Engagements, Tasks
 
 Open question from your notes: _when does a proposal become a project? what stages?_ Sketching one direction so we can react to it together — none of this is committed yet.
