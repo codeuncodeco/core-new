@@ -78,6 +78,8 @@ export interface Config {
     'contact-submissions': ContactSubmission;
     clients: Client;
     proposals: Proposal;
+    engagements: Engagement;
+    tasks: Task;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -96,6 +98,8 @@ export interface Config {
     'contact-submissions': ContactSubmissionsSelect<false> | ContactSubmissionsSelect<true>;
     clients: ClientsSelect<false> | ClientsSelect<true>;
     proposals: ProposalsSelect<false> | ProposalsSelect<true>;
+    engagements: EngagementsSelect<false> | EngagementsSelect<true>;
+    tasks: TasksSelect<false> | TasksSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -626,6 +630,71 @@ export interface Proposal {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Active client work. Created when a proposal is accepted; ongoing maintenance lives here as a long-running engagement in the "maintenance" stage.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "engagements".
+ */
+export interface Engagement {
+  id: number;
+  /**
+   * Admin-only label, e.g. "Consultway — Platform Build".
+   */
+  internalTitle: string;
+  client: number | Client;
+  /**
+   * The proposal this engagement was accepted from, if any.
+   */
+  sourceProposal?: (number | null) | Proposal;
+  stage: 'scoping' | 'design' | 'development' | 'testing' | 'deployment' | 'maintenance' | 'done';
+  startDate?: string | null;
+  targetEndDate?: string | null;
+  actualEndDate?: string | null;
+  /**
+   * Running engagement notes. Author and timestamp are stamped on save.
+   */
+  notes?:
+    | {
+        note: string;
+        author?: (number | null) | User;
+        createdAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Granular work items, optionally tied to an engagement.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tasks".
+ */
+export interface Task {
+  id: number;
+  title: string;
+  description?: string | null;
+  engagement?: (number | null) | Engagement;
+  assignee?: (number | null) | User;
+  status: 'todo' | 'in-progress' | 'done' | 'blocked';
+  priority?: ('low' | 'medium' | 'high') | null;
+  dueDate?: string | null;
+  attachments?: (number | Media)[] | null;
+  /**
+   * Discussion thread. Author and timestamp are stamped on save.
+   */
+  comments?:
+    | {
+        note: string;
+        author?: (number | null) | User;
+        createdAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -692,6 +761,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'proposals';
         value: number | Proposal;
+      } | null)
+    | ({
+        relationTo: 'engagements';
+        value: number | Engagement;
+      } | null)
+    | ({
+        relationTo: 'tasks';
+        value: number | Task;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1014,6 +1091,53 @@ export interface ProposalsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "engagements_select".
+ */
+export interface EngagementsSelect<T extends boolean = true> {
+  internalTitle?: T;
+  client?: T;
+  sourceProposal?: T;
+  stage?: T;
+  startDate?: T;
+  targetEndDate?: T;
+  actualEndDate?: T;
+  notes?:
+    | T
+    | {
+        note?: T;
+        author?: T;
+        createdAt?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tasks_select".
+ */
+export interface TasksSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  engagement?: T;
+  assignee?: T;
+  status?: T;
+  priority?: T;
+  dueDate?: T;
+  attachments?: T;
+  comments?:
+    | T
+    | {
+        note?: T;
+        author?: T;
+        createdAt?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
