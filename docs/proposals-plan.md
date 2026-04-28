@@ -38,6 +38,7 @@ Workflow: author in Payload admin → live preview the rendered page in the ifra
 - [ ] **Service-binding spike** — `apps/web` → `apps/cms` is currently REST over `PUBLIC_CMS_URL`. The plan was to switch to a Cloudflare service binding for speed/privacy. REST works fine for now; do the spike when there's a reason.
 - [ ] **Engagements + Tasks collections** — phase 3 of the bigger lifecycle (Clients → Proposals → Engagements → Tasks). Decisions captured: rename target is `Engagements`, stages `scoping → design → development → testing → deployment → maintenance → done`, ongoing maintenance lives as a long-running engagement in `maintenance`, Tasks built in-house with comments + attachments. Not started.
 - [ ] **New dev env** — add a `dev` block to `apps/cms/wrangler.jsonc` (and `apps/web/wrangler.jsonc` for the matching frontend) alongside the existing `local` / `test` / `live` envs. Mirrors the `test` shape (own D1 database id, R2 bucket, `cms-dev.codeuncode.com` / `dev.codeuncode.com` custom domain, own `WEB_URL`/`CMS_URL` vars). Useful as a personal scratchpad without polluting `test`.
+- [ ] **WYSIWYG-like in-place editor** (stretch from the plan). A `/edit/proposals/<slug>` route on `apps/web` that renders the proposal with click-to-edit text fields, debounced PATCH-on-blur to the CMS REST API, and an auth gate via Payload's session cookie.
 
 ## How it works
 

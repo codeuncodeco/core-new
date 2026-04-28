@@ -39,6 +39,39 @@
         }
       ]
     },
+    // Remote dev sandbox. Deploys with `--env=dev`. cms-dev.codeuncode.com.
+    // First-time setup:
+    //   wrangler d1 create codeuncode-dev    # paste returned id below
+    //   wrangler r2 bucket create codeuncode-dev
+    //   # Add the cms-dev.codeuncode.com custom domain to the worker after first deploy.
+    "dev": {
+      "name": "codeuncode-cms-dev",
+      "services": [],
+      "routes": [{ "pattern": "cms-dev.codeuncode.com", "custom_domain": true }],
+      "vars": {
+        "WEB_URL": "https://dev.codeuncode.com",
+        "CMS_URL": "https://cms-dev.codeuncode.com"
+      },
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_name": "codeuncode-dev",
+          "database_id": "REPLACE_WITH_DEV_D1_ID",
+          "remote": true
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "codeuncode-dev",
+          "preview_bucket_name": "codeuncode-dev",
+          "remote": true
+        }
+      ],
+      "observability": {
+        "enabled": true
+      }
+    },
     // Remote pre-prod. Deploys with `--env=test`. cms-test.codeuncode.com.
     "test": {
       "name": "codeuncode-cms-test",

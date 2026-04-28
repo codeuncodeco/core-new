@@ -20,6 +20,14 @@
   // Top-level has no bindings/vars/routes by design (washi pattern). Every
   // deploy must pick an env explicitly with `--env=<name>`.
   "env": {
+    // Remote dev sandbox. dev.codeuncode.com — pairs with cms-dev.codeuncode.com.
+    "dev": {
+      "name": "codeuncode-web-dev",
+      "vars": {
+        "PUBLIC_CMS_URL": "https://cms-dev.codeuncode.com"
+      },
+      "routes": [{ "pattern": "dev.codeuncode.com", "custom_domain": true }]
+    },
     // Remote pre-prod. test.codeuncode.com.
     "test": {
       "name": "codeuncode-web-test",
