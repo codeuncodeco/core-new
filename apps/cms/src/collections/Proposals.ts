@@ -348,7 +348,10 @@ export const Proposals: CollectionConfig = {
       admin: {
         description:
           'Running negotiation/follow-up notes. author + createdAt are stamped on save.',
-        components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' },
+        components: {
+          Field: '@/components/NotesFeed#NotesFeed',
+          RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel',
+        },
       },
       fields: [
         {
