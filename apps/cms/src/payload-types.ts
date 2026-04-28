@@ -76,6 +76,8 @@ export interface Config {
     brands: Brand;
     partners: Partner;
     'contact-submissions': ContactSubmission;
+    clients: Client;
+    proposals: Proposal;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -92,6 +94,8 @@ export interface Config {
     brands: BrandsSelect<false> | BrandsSelect<true>;
     partners: PartnersSelect<false> | PartnersSelect<true>;
     'contact-submissions': ContactSubmissionsSelect<false> | ContactSubmissionsSelect<true>;
+    clients: ClientsSelect<false> | ClientsSelect<true>;
+    proposals: ProposalsSelect<false> | ProposalsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -442,6 +446,185 @@ export interface ContactSubmission {
   createdAt: string;
 }
 /**
+ * People/orgs we send proposals to and work with.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clients".
+ */
+export interface Client {
+  id: number;
+  name: string;
+  /**
+   * Optional. Renders below the project name in proposal headers.
+   */
+  tagline?: string | null;
+  defaultLogo?: (number | null) | Media;
+  contacts?:
+    | {
+        name?: string | null;
+        email?: string | null;
+        phone?: string | null;
+        role?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  status?: ('prospect' | 'active' | 'inactive' | 'archived') | null;
+  notes?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Client proposals — authored here, rendered on apps/web, exported to PDF via the browser.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "proposals".
+ */
+export interface Proposal {
+  id: number;
+  /**
+   * Admin-only label. e.g. "Consultway — Proposal A".
+   */
+  internalTitle: string;
+  /**
+   * Public URL: /proposals/<urlSlug>. Should be hard to guess.
+   */
+  urlSlug: string;
+  client: number | Client;
+  projectName: string;
+  /**
+   * e.g. "Website Development", "Companies & Tender Platform".
+   */
+  subtitle?: string | null;
+  /**
+   * Falls back to the client's defaultLogo if blank.
+   */
+  logo?: (number | null) | Media;
+  accentColor?: string | null;
+  fontFamily?: ('League Spartan' | 'Inter' | 'Space Mono' | 'Custom') | null;
+  /**
+   * Date shown in header. Defaults to today.
+   */
+  proposalDate: string;
+  overview: string;
+  /**
+   * Cards in the "At a Glance" row. e.g. Timeline + Total Cost for a project, or Monthly Fee + Contract Length for maintenance.
+   */
+  summaryCards?:
+    | {
+        label: string;
+        value: string;
+        /**
+         * Small line under the value. e.g. "+18% GST".
+         */
+        caption?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  scopeItems?:
+    | {
+        title: string;
+        description: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Override e.g. for maintenance: "Monthly Fee".
+   */
+  costSectionLabel?: string | null;
+  /**
+   * Override e.g. "Monthly Total".
+   */
+  costTotalLabel?: string | null;
+  /**
+   * Renderer skips the cost-breakdown section when empty.
+   */
+  costItems?:
+    | {
+        item: string;
+        /**
+         * In rupees. Formatted as ₹X,XX,XXX in the rendered page.
+         */
+        amount: number;
+        id?: string | null;
+      }[]
+    | null;
+  techStack?:
+    | {
+        label: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  recurringCosts?:
+    | {
+        item: string;
+        /**
+         * Free-form, e.g. "₹500–2,000/mo".
+         */
+        cost: string;
+        notes?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  paymentTerms?:
+    | {
+        milestone: string;
+        sharePercent: number;
+        id?: string | null;
+      }[]
+    | null;
+  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'cold' | 'withdrawn';
+  /**
+   * When you sent the PDF/link. Auto-set to now when status flips to "sent" — editable.
+   */
+  sentAt?: string | null;
+  sentTo?:
+    | {
+        name?: string | null;
+        email?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  sentMethod?: ('email' | 'whatsapp' | 'in-person' | 'other') | null;
+  /**
+   * Update on any back-and-forth. Drives the "cold" auto-flag (3 weeks of silence → cold).
+   */
+  lastContactAt?: string | null;
+  respondedAt?: string | null;
+  /**
+   * Optional: archive the exact PDF you sent.
+   */
+  attachedPdf?: (number | null) | Media;
+  /**
+   * Running negotiation/follow-up notes. author + createdAt are stamped on save.
+   */
+  notes?:
+    | {
+        note: string;
+        author?: (number | null) | User;
+        createdAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -500,6 +683,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'contact-submissions';
         value: number | ContactSubmission;
+      } | null)
+    | ({
+        relationTo: 'clients';
+        value: number | Client;
+      } | null)
+    | ({
+        relationTo: 'proposals';
+        value: number | Proposal;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -713,6 +904,114 @@ export interface ContactSubmissionsSelect<T extends boolean = true> {
   userAgent?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "clients_select".
+ */
+export interface ClientsSelect<T extends boolean = true> {
+  name?: T;
+  tagline?: T;
+  defaultLogo?: T;
+  contacts?:
+    | T
+    | {
+        name?: T;
+        email?: T;
+        phone?: T;
+        role?: T;
+        id?: T;
+      };
+  status?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "proposals_select".
+ */
+export interface ProposalsSelect<T extends boolean = true> {
+  internalTitle?: T;
+  urlSlug?: T;
+  client?: T;
+  projectName?: T;
+  subtitle?: T;
+  logo?: T;
+  accentColor?: T;
+  fontFamily?: T;
+  proposalDate?: T;
+  overview?: T;
+  summaryCards?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        caption?: T;
+        id?: T;
+      };
+  scopeItems?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  costSectionLabel?: T;
+  costTotalLabel?: T;
+  costItems?:
+    | T
+    | {
+        item?: T;
+        amount?: T;
+        id?: T;
+      };
+  techStack?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        id?: T;
+      };
+  recurringCosts?:
+    | T
+    | {
+        item?: T;
+        cost?: T;
+        notes?: T;
+        id?: T;
+      };
+  paymentTerms?:
+    | T
+    | {
+        milestone?: T;
+        sharePercent?: T;
+        id?: T;
+      };
+  status?: T;
+  sentAt?: T;
+  sentTo?:
+    | T
+    | {
+        name?: T;
+        email?: T;
+        id?: T;
+      };
+  sentMethod?: T;
+  lastContactAt?: T;
+  respondedAt?: T;
+  attachedPdf?: T;
+  notes?:
+    | T
+    | {
+        note?: T;
+        author?: T;
+        createdAt?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
