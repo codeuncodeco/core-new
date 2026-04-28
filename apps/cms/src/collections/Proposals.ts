@@ -146,6 +146,7 @@ export const Proposals: CollectionConfig = {
       admin: {
         description:
           'Cards in the "At a Glance" row. e.g. Timeline + Total Cost for a project, or Monthly Fee + Contract Length for maintenance.',
+        components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' },
       },
       fields: [
         { name: 'label', type: 'text', required: true },
@@ -162,6 +163,7 @@ export const Proposals: CollectionConfig = {
     {
       name: 'scopeItems',
       type: 'array',
+      admin: { components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' } },
       fields: [
         { name: 'title', type: 'text', required: true },
         { name: 'description', type: 'textarea', required: true },
@@ -184,7 +186,10 @@ export const Proposals: CollectionConfig = {
     {
       name: 'costItems',
       type: 'array',
-      admin: { description: 'Renderer skips the cost-breakdown section when empty.' },
+      admin: {
+        description: 'Renderer skips the cost-breakdown section when empty.',
+        components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' },
+      },
       fields: [
         { name: 'item', type: 'text', required: true },
         {
@@ -200,6 +205,7 @@ export const Proposals: CollectionConfig = {
     {
       name: 'techStack',
       type: 'array',
+      admin: { components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' } },
       fields: [
         { name: 'label', type: 'text', required: true },
         { name: 'value', type: 'text', required: true },
@@ -210,6 +216,7 @@ export const Proposals: CollectionConfig = {
     {
       name: 'recurringCosts',
       type: 'array',
+      admin: { components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' } },
       fields: [
         { name: 'item', type: 'text', required: true },
         {
@@ -226,6 +233,7 @@ export const Proposals: CollectionConfig = {
     {
       name: 'paymentTerms',
       type: 'array',
+      admin: { components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' } },
       fields: [
         { name: 'milestone', type: 'text', required: true },
         { name: 'sharePercent', type: 'number', required: true },
@@ -260,6 +268,7 @@ export const Proposals: CollectionConfig = {
     {
       name: 'sentTo',
       type: 'array',
+      admin: { components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' } },
       fields: [
         { name: 'name', type: 'text' },
         { name: 'email', type: 'email' },
@@ -298,6 +307,7 @@ export const Proposals: CollectionConfig = {
       admin: {
         description:
           'Running negotiation/follow-up notes. author + createdAt are stamped on save.',
+        components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' },
       },
       fields: [
         {

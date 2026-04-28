@@ -28,6 +28,7 @@ export const Clients: CollectionConfig = {
     {
       name: 'contacts',
       type: 'array',
+      admin: { components: { RowLabel: '@/components/ArrayRowLabel#ArrayRowLabel' } },
       fields: [
         { name: 'name', type: 'text' },
         { name: 'email', type: 'email' },
