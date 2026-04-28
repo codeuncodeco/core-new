@@ -14,9 +14,21 @@ interface Props {
   // When true, suppress the version label (e.g. live preview where the
   // doc isn't necessarily saved yet).
   hideVersionLabel?: boolean;
+  // When true, emit data-edit-path attributes on editable elements and
+  // render numbers as raw values (no ₹ / % formatting inside the editable
+  // span) so the in-place editor at /edit/proposals/<slug> can wire them
+  // up to contenteditable.
+  editMode?: boolean;
 }
 
-const { proposal, renderedAt = null, hideVersionLabel = false } = Astro.props;
+const {
+  proposal,
+  renderedAt = null,
+  hideVersionLabel = false,
+  editMode = false,
+} = Astro.props;
+// Helper — returns undefined in non-edit mode so Astro omits the attribute.
+const ep = (path: string) => (editMode ? path : undefined);
 
 const client = (typeof proposal.client === "object" ? proposal.client : null) as Client | null;
 const logoMedia = (client?.logo && typeof client.logo === "object" ? client.logo : null) as Media | null;
@@ -102,14 +114,20 @@ const fontImport =
         {logoUrl ? (
           <img src={logoUrl} alt={client?.name ?? proposal.projectName} class="h-20 mb-6" />
         ) : (
-          <h1 class="text-4xl font-semibold mb-6">{proposal.projectName}</h1>
+          <h1 class="text-4xl font-semibold mb-6" data-edit-path={ep('projectName')}>
+            {proposal.projectName}
+          </h1>
         )}
         <p class="text-base uppercase tracking-widest text-gray-900/50 mb-2">Proposal</p>
         {logoUrl && (
-          <p class="text-2xl text-gray-900 mb-1">{proposal.projectName}</p>
+          <p class="text-2xl text-gray-900 mb-1" data-edit-path={ep('projectName')}>
+            {proposal.projectName}
+          </p>
         )}
-        {proposal.subtitle && (
-          <p class="text-2xl text-gray-900 mb-1">{proposal.subtitle}</p>
+        {(proposal.subtitle || editMode) && (
+          <p class="text-2xl text-gray-900 mb-1" data-edit-path={ep('subtitle')}>
+            {proposal.subtitle ?? ''}
+          </p>
         )}
         {client?.tagline && (
           <p class="text-xl text-gray-900/70 mb-6">{client.tagline}</p>
@@ -133,9 +151,11 @@ const fontImport =
       </header>
 
       <!-- Overview -->
-      {proposal.overview && (
+      {(proposal.overview || editMode) && (
         <section class="mb-20">
-          <p class="text-xl leading-relaxed">{proposal.overview}</p>
+          <p class="text-xl leading-relaxed" data-edit-path={ep('overview')}>
+            {proposal.overview ?? ''}
+          </p>
         </section>
       )}
 
@@ -152,12 +172,27 @@ const fontImport =
                   ? "sm:grid-cols-3"
                   : "sm:grid-cols-2 lg:grid-cols-4"
           } gap-4`}>
-            {summaryCards.map((card) => (
+            {summaryCards.map((card, i) => (
               <div class="border border-gray-300 rounded-lg p-5">
-                <p class="text-base text-gray-400 uppercase tracking-wide mb-1">{card.label}</p>
-                <p class="text-3xl font-semibold tabnum">{card.value}</p>
-                {card.caption && (
-                  <p class="text-base text-gray-600">{card.caption}</p>
+                <p
+                  class="text-base text-gray-400 uppercase tracking-wide mb-1"
+                  data-edit-path={ep(`summaryCards.${i}.label`)}
+                >
+                  {card.label}
+                </p>
+                <p
+                  class="text-3xl font-semibold tabnum"
+                  data-edit-path={ep(`summaryCards.${i}.value`)}
+                >
+                  {card.value}
+                </p>
+                {(card.caption || editMode) && (
+                  <p
+                    class="text-base text-gray-600"
+                    data-edit-path={ep(`summaryCards.${i}.caption`)}
+                  >
+                    {card.caption ?? ''}
+                  </p>
                 )}
               </div>
             ))}
@@ -170,12 +205,18 @@ const fontImport =
         <section class="mb-20">
           <h2 class="font-semibold text-2xl mb-4">Scope</h2>
           <ul class="space-y-3">
-            {scopeItems.map((item) => (
+            {scopeItems.map((item, i) => (
               <li class="flex items-start gap-3">
                 <span class="mt-2 block w-2 h-2 rounded-full bg-accent flex-shrink-0"></span>
                 <span>
-                  <span class="font-semibold">{item.title}</span>
-                  {item.description && <> - {item.description}</>}
+                  <span class="font-semibold" data-edit-path={ep(`scopeItems.${i}.title`)}>
+                    {item.title}
+                  </span>
+                  {(item.description || editMode) && (
+                    <>
+                      {' '}- <span data-edit-path={ep(`scopeItems.${i}.description`)}>{item.description ?? ''}</span>
+                    </>
+                  )}
                 </span>
               </li>
             ))}
@@ -186,7 +227,9 @@ const fontImport =
       <!-- Cost Breakdown -->
       {showCostSection && (
         <section class="mb-20">
-          <h2 class="font-semibold text-2xl mb-4">{proposal.costSectionLabel || "Cost Breakdown"}</h2>
+          <h2 class="font-semibold text-2xl mb-4" data-edit-path={ep('costSectionLabel')}>
+            {proposal.costSectionLabel || 'Cost Breakdown'}
+          </h2>
           <table class="w-full text-xl">
             <thead>
               <tr class="border-b border-gray-300">
@@ -195,16 +238,24 @@ const fontImport =
               </tr>
             </thead>
             <tbody>
-              {costItems.map((item) => (
+              {costItems.map((item, i) => (
                 <tr class="border-b border-gray-200">
-                  <td class="py-3">{item.item}</td>
-                  <td class="py-3 tabnum">{formatINR(item.amount ?? 0)}</td>
+                  <td class="py-3" data-edit-path={ep(`costItems.${i}.item`)}>{item.item}</td>
+                  <td class="py-3 tabnum">
+                    {editMode ? (
+                      <>₹<span data-edit-path={`costItems.${i}.amount`} data-edit-type="number">{item.amount ?? 0}</span></>
+                    ) : (
+                      formatINR(item.amount ?? 0)
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr class="border-t-2 border-gray-900">
-                <td class="py-3 font-semibold">{proposal.costTotalLabel || "Total"}</td>
+                <td class="py-3 font-semibold" data-edit-path={ep('costTotalLabel')}>
+                  {proposal.costTotalLabel || 'Total'}
+                </td>
                 <td class="py-3 font-semibold tabnum">{formatINR(grandTotal)}</td>
               </tr>
             </tfoot>
@@ -219,10 +270,10 @@ const fontImport =
           <h2 class="font-semibold text-2xl mb-4">Technical Architecture</h2>
           <table class="w-fit">
             <tbody class="divide-y divide-gray-200">
-              {proposal.techStack!.map((row) => (
+              {proposal.techStack!.map((row, i) => (
                 <tr>
-                  <td class="py-2 pr-6 text-gray-400">{row.label}</td>
-                  <td class="py-2 font-semibold">{row.value}</td>
+                  <td class="py-2 pr-6 text-gray-400" data-edit-path={ep(`techStack.${i}.label`)}>{row.label}</td>
+                  <td class="py-2 font-semibold" data-edit-path={ep(`techStack.${i}.value`)}>{row.value}</td>
                 </tr>
               ))}
             </tbody>
@@ -246,11 +297,11 @@ const fontImport =
               </tr>
             </thead>
             <tbody>
-              {proposal.recurringCosts!.map((row) => (
+              {proposal.recurringCosts!.map((row, i) => (
                 <tr class="border-b border-gray-200">
-                  <td class="py-3">{row.item}</td>
-                  <td class="py-3 tabnum whitespace-nowrap pr-6">{row.cost}</td>
-                  <td class="py-3 text-gray-600">{row.notes ?? ""}</td>
+                  <td class="py-3" data-edit-path={ep(`recurringCosts.${i}.item`)}>{row.item}</td>
+                  <td class="py-3 tabnum whitespace-nowrap pr-6" data-edit-path={ep(`recurringCosts.${i}.cost`)}>{row.cost}</td>
+                  <td class="py-3 text-gray-600" data-edit-path={ep(`recurringCosts.${i}.notes`)}>{row.notes ?? ''}</td>
                 </tr>
               ))}
             </tbody>
@@ -271,10 +322,12 @@ const fontImport =
               </tr>
             </thead>
             <tbody>
-              {proposal.paymentTerms!.map((row) => (
+              {proposal.paymentTerms!.map((row, i) => (
                 <tr class="border-b border-gray-200">
-                  <td class="py-3">{row.milestone}</td>
-                  <td class="py-3 tabnum">{row.sharePercent}%</td>
+                  <td class="py-3" data-edit-path={ep(`paymentTerms.${i}.milestone`)}>{row.milestone}</td>
+                  <td class="py-3 tabnum">
+                    <span data-edit-path={ep(`paymentTerms.${i}.sharePercent`)} data-edit-type="number">{row.sharePercent}</span>%
+                  </td>
                   <td class="py-3 tabnum">{formatINR((row.sharePercent / 100) * grandTotal)}</td>
                 </tr>
               ))}
@@ -294,5 +347,15 @@ const fontImport =
 
       <slot />
     </div>
+
+    {editMode && (
+      <script
+        type="application/json"
+        id="proposal-data"
+        is:inline
+        set:html={JSON.stringify(proposal)}
+      />
+    )}
+    {editMode && <script>import "../scripts/proposal-editor";</script>}
   </body>
 </html>
