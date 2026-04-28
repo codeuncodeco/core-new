@@ -1,4 +1,17 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, FieldHook } from 'payload'
+
+// Derive a default firstName from the email's local part when blank, e.g.
+// "sm@gmail.com" → "sm". Lets us keep firstName required without forcing
+// users to type it on every account creation.
+const deriveFromEmail: FieldHook = ({ value, data }) => {
+  if (typeof value === 'string' && value.trim().length > 0) return value
+  const email = (data as { email?: string } | undefined)?.email
+  if (typeof email === 'string') {
+    const local = email.split('@')[0]?.trim()
+    if (local) return local
+  }
+  return value
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -17,6 +30,13 @@ export const Users: CollectionConfig = {
   },
   fields: [
     // Email added by default
-    // Add more fields as needed
+    {
+      name: 'firstName',
+      type: 'text',
+      required: true,
+      admin: { description: 'Auto-derived from the email when left blank (e.g. "sm@example.com" → "sm").' },
+      hooks: { beforeValidate: [deriveFromEmail] },
+    },
+    { name: 'lastName', type: 'text' },
   ],
 }

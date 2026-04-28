@@ -147,6 +147,11 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  /**
+   * Auto-derived from the email when left blank (e.g. "sm@example.com" → "sm").
+   */
+  firstName: string;
+  lastName?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -735,6 +740,8 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

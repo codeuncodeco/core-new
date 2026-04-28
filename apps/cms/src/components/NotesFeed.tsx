@@ -1,12 +1,17 @@
 'use client'
 
 import { useAllFormFields, useForm } from '@payloadcms/ui'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type Author =
   | number
   | string
-  | { id?: number | string; email?: string; name?: string }
+  | {
+      id?: number | string
+      email?: string
+      firstName?: string | null
+      lastName?: string | null
+    }
   | null
   | undefined
 
@@ -34,10 +39,30 @@ const formatTimestamp = (iso: string | null | undefined): string => {
   })
 }
 
-const authorLabel = (a: Author): string => {
-  if (!a) return ''
-  if (typeof a === 'number' || typeof a === 'string') return `User #${a}`
-  return a.name ?? a.email ?? `User #${a.id ?? '?'}`
+type UserRecord = {
+  id: number | string
+  email?: string | null
+  firstName?: string | null
+  lastName?: string | null
+}
+
+const formatUserName = (u: UserRecord | undefined, fallbackId: number | string): string => {
+  if (!u) return `User #${fallbackId}`
+  const first = (u.firstName ?? '').trim()
+  const last = (u.lastName ?? '').trim()
+  if (first && last) return `${first} ${last[0]}.`
+  if (first) return first
+  if (u.email) return u.email.split('@')[0] ?? u.email
+  return `User #${u.id}`
+}
+
+const authorLabel = (a: Author, users: Record<string, UserRecord>): string => {
+  if (a == null) return ''
+  if (typeof a === 'number' || typeof a === 'string') {
+    return formatUserName(users[String(a)], a)
+  }
+  // Already populated.
+  return formatUserName(a as UserRecord, a.id ?? '?')
 }
 
 // Replaces the default array-field UI for proposal notes with a chronological
@@ -48,6 +73,7 @@ export const NotesFeed = ({ path = 'notes', schemaPath }: Props) => {
   const [fields] = useAllFormFields()
   const { addFieldRow, removeFieldRow } = useForm()
   const [draft, setDraft] = useState('')
+  const [users, setUsers] = useState<Record<string, UserRecord>>({})
 
   // Reconstruct rows from path → state map.
   const pathPrefix = `${path}.`
@@ -65,6 +91,48 @@ export const NotesFeed = ({ path = 'notes', schemaPath }: Props) => {
   }
 
   const indices = [...rows.keys()].sort((a, b) => a - b)
+
+  // Collect ID-only authors that we still need to look up.
+  const missingAuthorIds = useMemo(() => {
+    const seen = new Set<string>()
+    for (const idx of indices) {
+      const a = rows.get(idx)?.author
+      if (a == null) continue
+      if (typeof a !== 'number' && typeof a !== 'string') continue
+      const key = String(a)
+      if (!users[key]) seen.add(key)
+    }
+    return [...seen]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [indices.join(','), users])
+
+  useEffect(() => {
+    if (missingAuthorIds.length === 0) return
+    let cancelled = false
+    ;(async () => {
+      const params = new URLSearchParams({
+        depth: '0',
+        limit: '100',
+      })
+      for (const id of missingAuthorIds) params.append('where[id][in][]', id)
+      try {
+        const res = await fetch(`/api/users?${params}`, { credentials: 'include' })
+        if (!res.ok) return
+        const data = (await res.json()) as { docs?: UserRecord[] }
+        if (cancelled || !data.docs) return
+        setUsers((prev) => {
+          const next = { ...prev }
+          for (const u of data.docs!) next[String(u.id)] = u
+          return next
+        })
+      } catch {
+        // Silent — falls back to "User #N".
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [missingAuthorIds.join(',')])
 
   // Display newest first; unsaved rows (no createdAt) sort to the top so
   // they're visible right after the user clicks Add.
@@ -234,7 +302,7 @@ export const NotesFeed = ({ path = 'notes', schemaPath }: Props) => {
                 >
                   <span>
                     {formatTimestamp(data.createdAt)}
-                    {data.author ? ` · ${authorLabel(data.author)}` : ''}
+                    {data.author ? ` · ${authorLabel(data.author, users)}` : ''}
                     {isUnsaved ? ' · unsaved' : ''}
                   </span>
                   <button
