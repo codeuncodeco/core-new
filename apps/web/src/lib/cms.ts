@@ -1,4 +1,4 @@
-import type { Service, Project, RateCardSetting, Category, Tag, Brand, Partner, Media } from "@cms/payload-types";
+import type { Service, Project, RateCardSetting, Category, Tag, Brand, Partner, Media, Proposal } from "@cms/payload-types";
 
 export type ServiceWithRefs = Omit<Service, "category" | "tags"> & {
   category: Category;
@@ -228,6 +228,45 @@ export const getMediaById = async (
     });
     if (!res.ok) return null;
     return (await res.json()) as Media;
+  } catch (err) {
+    if (isCmsDown(err)) return null;
+    throw err;
+  }
+};
+
+// --- Proposals ---
+
+// A Payload version doc wraps the actual collection data inside .version.
+export type ProposalVersion = {
+  id: string;
+  parent: number | { id: number };
+  version: Proposal;
+  createdAt: string;
+  updatedAt: string;
+  _status?: "draft" | "published";
+};
+
+export const getProposalBySlug = async (slug: string): Promise<Proposal | null> => {
+  const params = new URLSearchParams({
+    "where[urlSlug][equals]": slug,
+    limit: "1",
+    // depth=2 so client.logo (Media) resolves on the rendered page.
+    depth: "2",
+  });
+  const data = await fetchJson<PayloadList<Proposal>>(
+    `/api/proposals?${params}`,
+    emptyList<Proposal>(),
+  );
+  return data.docs[0] ?? null;
+};
+
+export const getProposalVersionById = async (
+  versionId: string,
+): Promise<ProposalVersion | null> => {
+  try {
+    const res = await fetch(`${CMS_URL}/api/proposals/versions/${versionId}?depth=2`);
+    if (!res.ok) return null;
+    return (await res.json()) as ProposalVersion;
   } catch (err) {
     if (isCmsDown(err)) return null;
     throw err;
