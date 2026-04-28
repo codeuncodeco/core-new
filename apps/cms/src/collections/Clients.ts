@@ -24,7 +24,7 @@ export const Clients: CollectionConfig = {
         description: "Optional. Renders below the project name in proposal headers.",
       },
     },
-    { name: 'defaultLogo', type: 'upload', relationTo: 'media' },
+    { name: 'logo', type: 'upload', relationTo: 'media' },
     {
       name: 'contacts',
       type: 'array',

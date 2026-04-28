@@ -93,12 +93,6 @@ export const Proposals: CollectionConfig = {
       },
     },
     {
-      name: 'logo',
-      type: 'upload',
-      relationTo: 'media',
-      admin: { description: "Falls back to the client's defaultLogo if blank." },
-    },
-    {
       name: 'accentColor',
       type: 'text',
       defaultValue: '#f97316',

@@ -458,7 +458,7 @@ export interface Client {
    * Optional. Renders below the project name in proposal headers.
    */
   tagline?: string | null;
-  defaultLogo?: (number | null) | Media;
+  logo?: (number | null) | Media;
   contacts?:
     | {
         name?: string | null;
@@ -509,10 +509,6 @@ export interface Proposal {
    * e.g. "Website Development", "Companies & Tender Platform".
    */
   subtitle?: string | null;
-  /**
-   * Falls back to the client's defaultLogo if blank.
-   */
-  logo?: (number | null) | Media;
   accentColor?: string | null;
   fontFamily?: ('League Spartan' | 'Inter' | 'Space Mono' | 'Custom') | null;
   /**
@@ -912,7 +908,7 @@ export interface ContactSubmissionsSelect<T extends boolean = true> {
 export interface ClientsSelect<T extends boolean = true> {
   name?: T;
   tagline?: T;
-  defaultLogo?: T;
+  logo?: T;
   contacts?:
     | T
     | {
@@ -937,7 +933,6 @@ export interface ProposalsSelect<T extends boolean = true> {
   client?: T;
   projectName?: T;
   subtitle?: T;
-  logo?: T;
   accentColor?: T;
   fontFamily?: T;
   proposalDate?: T;
