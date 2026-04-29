@@ -1,0 +1,45 @@
+---
+// Public, print-ready proposal page. Rendered on demand (SSR) so changes in
+// the CMS show up immediately without redeploying. Default URL renders the
+// latest published version. ?v=<versionId> renders a specific past version.
+export const prerender = false;
+
+import { getProposalBySlug, getProposalVersionById } from "../../lib/cms";
+import ProposalLayout from "../../layouts/ProposalLayout.astro";
+import type { Proposal } from "@cms/payload-types";
+
+const { slug } = Astro.params;
+const versionId = Astro.url.searchParams.get("v");
+
+if (!slug) {
+  return new Response("Not Found", { status: 404 });
+}
+
+let proposal: Proposal | null = null;
+let renderedAt: string | null = null;
+
+if (versionId) {
+  const v = await getProposalVersionById(versionId);
+  // Verify the version belongs to the proposal at this slug — no cross-slug
+  // leaks if someone guesses a version id.
+  if (!v || v.version?.urlSlug !== slug) {
+    return new Response("Not Found", { status: 404 });
+  }
+  proposal = v.version;
+  renderedAt = v.updatedAt;
+} else {
+  proposal = await getProposalBySlug(slug);
+  if (!proposal) {
+    return new Response("Not Found", { status: 404 });
+  }
+  renderedAt = proposal.updatedAt;
+
+  // Drafts shouldn't be public. Payload auto-filters via _status for unauth
+  // requests; this is a belt-and-braces guard.
+  if ((proposal as { _status?: string })._status === "draft") {
+    return new Response("Not Found", { status: 404 });
+  }
+}
+---
+
+<ProposalLayout proposal={proposal} renderedAt={renderedAt} />

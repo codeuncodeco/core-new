@@ -1,0 +1,50 @@
+---
+// In-place editor for a proposal. Renders ProposalLayout with edit
+// affordances; the proposal-editor client script wires every
+// [data-edit-path] element to contenteditable + debounced save.
+//
+// Auth: in production we forward the editor's CMS auth cookie to
+// /api/users/me to verify a logged-in admin. In local dev (or when the
+// CMS is unreachable) we let the page render anyway — saves will still
+// fail at the CMS layer if the cookie isn't valid, so this just avoids
+// a hard 401 during development.
+export const prerender = false;
+
+import { getProposalBySlugPreview } from "../../../lib/cms";
+import ProposalLayout from "../../../layouts/ProposalLayout.astro";
+
+const { slug } = Astro.params;
+if (!slug) return new Response("Not Found", { status: 404 });
+
+const cookie = Astro.request.headers.get("cookie");
+const CMS_URL = import.meta.env.PUBLIC_CMS_URL || "http://localhost:3000";
+
+// Auth check — production only; non-fatal in dev.
+let authed = false;
+let unreachable = false;
+try {
+  const meRes = await fetch(`${CMS_URL}/api/users/me`, {
+    headers: cookie ? { cookie } : {},
+  });
+  if (meRes.ok) {
+    const me = (await meRes.json()) as { user?: { id?: number | string } };
+    authed = Boolean(me.user?.id);
+  }
+} catch {
+  unreachable = true;
+}
+
+if (!authed && !import.meta.env.DEV && !unreachable) {
+  return new Response(
+    "Unauthorized. Sign in at the CMS admin first, then return here.",
+    { status: 401 },
+  );
+}
+
+const proposal = await getProposalBySlugPreview(slug, cookie);
+if (!proposal) return new Response("Not Found", { status: 404 });
+
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+---
+
+<ProposalLayout proposal={proposal} editMode={true} hideVersionLabel={true} />

@@ -6,6 +6,8 @@ import { allSeedCategories } from '../../seed/categories-data'
 import { allSeedTags } from '../../seed/tags-data'
 import { allSeedProjects } from '../../seed/projects-data'
 import { allSeedPartners } from '../../seed/partners-data'
+import { allSeedClients } from '../../seed/clients-data'
+import { allSeedProposals } from '../../seed/proposals-data'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
@@ -38,7 +40,7 @@ const replaceAll = async <T>(
   return createdSlugs
 }
 
-const KNOWN_TARGETS = ['categories', 'tags', 'services', 'projects', 'partners', 'rate-card'] as const
+const KNOWN_TARGETS = ['categories', 'tags', 'services', 'projects', 'partners', 'rate-card', 'clients', 'proposals'] as const
 type Target = (typeof KNOWN_TARGETS)[number]
 
 const runSeed = async (request: Request) => {
@@ -70,6 +72,19 @@ const runSeed = async (request: Request) => {
         {
           error:
             'services, categories, and tags must be seeded together (they have relational dependencies). Include all three in ?only= or omit the filter for a full seed.',
+        },
+        { status: 400 },
+      )
+    }
+
+    // Proposals reference Clients — if you re-seed clients, you must re-seed
+    // proposals in the same run (otherwise proposals end up referencing
+    // deleted client IDs).
+    if (only.has('clients') && !only.has('proposals')) {
+      return Response.json(
+        {
+          error:
+            'clients and proposals must be seeded together. Include both in ?only= or omit the filter for a full seed.',
         },
         { status: 400 },
       )
@@ -174,6 +189,50 @@ const runSeed = async (request: Request) => {
     result.partnersCreated = partnersCreated.length
     result.partners = partnersCreated
     ran.push('partners')
+  }
+
+  // Wipe proposals before clients so the FK constraint doesn't trip when
+  // re-seeding clients.
+  if (shouldRun('proposals')) {
+    await replaceAll(payload, 'proposals', [], () => ({}))
+  }
+
+  if (shouldRun('clients')) {
+    const clientsCreated = await replaceAll(payload, 'clients', allSeedClients, (c) => ({
+      ...c,
+    }))
+    result.clientsCreated = clientsCreated.length
+    result.clients = clientsCreated
+    ran.push('clients')
+  }
+
+  if (shouldRun('proposals')) {
+    const clientDocs = await payload.find({ collection: 'clients', limit: 1000, depth: 0 })
+    const clientIdByName = new Map<string, number>(
+      clientDocs.docs.map((d) => [(d as { name: string }).name, (d as { id: number }).id]),
+    )
+
+    const proposalsCreated: string[] = []
+    for (const p of allSeedProposals) {
+      const clientId = clientIdByName.get(p.clientName)
+      if (!clientId) {
+        throw new Error(`Proposal "${p.urlSlug}" references unknown client "${p.clientName}".`)
+      }
+      const { clientName: _cn, ...rest } = p
+      const doc = await payload.create({
+        collection: 'proposals',
+        data: { ...rest, client: clientId },
+        overrideAccess: true,
+        // Seed proposals as drafts — they don't pretend to be real, sent
+        // proposals. Publish via the admin if you want one for end-to-end
+        // public-render testing.
+        draft: true,
+      })
+      proposalsCreated.push((doc as { urlSlug: string }).urlSlug)
+    }
+    result.proposalsCreated = proposalsCreated.length
+    result.proposals = proposalsCreated
+    ran.push('proposals')
   }
 
   if (shouldRun('rate-card')) {

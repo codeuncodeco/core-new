@@ -17,6 +17,10 @@ import { Projects } from './collections/Projects'
 import { Brands } from './collections/Brands'
 import { Partners } from './collections/Partners'
 import { ContactSubmissions } from './collections/ContactSubmissions'
+import { Clients } from './collections/Clients'
+import { Proposals } from './collections/Proposals'
+import { Engagements } from './collections/Engagements'
+import { Tasks } from './collections/Tasks'
 import { RateCardSettings } from './globals/RateCardSettings'
 import { EmailSettings } from './globals/EmailSettings'
 import { resendAdapter } from './email/resend'
@@ -78,7 +82,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Categories, Tags, Services, Projects, Brands, Partners, ContactSubmissions],
+  collections: [Users, Media, Categories, Tags, Services, Projects, Brands, Partners, ContactSubmissions, Clients, Proposals, Engagements, Tasks],
   globals: [RateCardSettings, EmailSettings],
   email: resendAdapter(),
   editor: lexicalEditor(),

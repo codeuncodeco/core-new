@@ -6,6 +6,96 @@ Workers will be created via the Cloudflare dashboard with GitHub integration (Wo
 
 ---
 
+## Phase 0 — `dev` env (personal sandbox)
+
+Same shape as Phase A, but pinned to `cms-dev.codeuncode.com` / `dev.codeuncode.com`. Use it as a personal scratchpad without polluting `test`.
+
+### 0.1. Create resources (CLI)
+
+```sh
+cd apps/cms
+
+# D1 — record the returned database_id
+pnpm exec wrangler d1 create codeuncode-dev
+# ⚠ paste the id into apps/cms/wrangler.jsonc > env.dev.d1_databases[0].database_id
+#   (currently: "REPLACE_WITH_DEV_D1_ID")
+
+# R2
+pnpm exec wrangler r2 bucket create codeuncode-dev
+```
+
+Commit the wrangler.jsonc change (D1 id).
+
+### 0.2. DNS (Cloudflare dashboard → `codeuncode.com` zone)
+
+Two **proxied** DNS records. Target doesn't matter — `custom_domain` binding takes over after first deploy.
+
+- `dev.codeuncode.com` — CNAME, proxied
+- `cms-dev.codeuncode.com` — CNAME, proxied
+
+### 0.3. Create `codeuncode-cms-dev` worker (dash)
+
+1. Workers & Pages → **Create** → **Import a repository** (Git).
+2. Connect the GitHub repo.
+3. **Project name:** `codeuncode-cms-dev`.
+4. **Production branch:** `add-proposals` (or whichever branch you want auto-deployed to dev).
+5. **Root directory:** `apps/cms`.
+6. **Build command:** `pnpm install --frozen-lockfile && pnpm --filter cu-core exec opennextjs-cloudflare build --env=dev`
+7. **Deploy command:** `pnpm --filter cu-core exec opennextjs-cloudflare deploy --env=dev`
+8. **Build environment variables:**
+   - `CLOUDFLARE_ENV=dev`
+   - `NODE_VERSION=20`
+9. Save (do **not** deploy yet — secrets next).
+
+### 0.4. Set `codeuncode-cms-dev` secrets (CLI)
+
+```sh
+cd apps/cms
+pnpm exec wrangler secret put PAYLOAD_SECRET --env=dev   # openssl rand -hex 32
+pnpm exec wrangler secret put SEED_SECRET    --env=dev   # openssl rand -hex 32
+pnpm exec wrangler secret put RESEND_API_KEY --env=dev   # reuse test/live key, or a separate one
+pnpm exec wrangler secret put CRON_SECRET    --env=dev   # used by /cold-flag-cron; must match the cron worker's
+```
+
+### 0.5. Create `codeuncode-web-dev` worker (dash)
+
+1. Workers & Pages → **Create** → **Import a repository**.
+2. Same repo.
+3. **Project name:** `codeuncode-web-dev`.
+4. **Production branch:** same as 0.3.
+5. **Root directory:** `apps/web`.
+6. **Build command:** `pnpm install --frozen-lockfile && pnpm --filter cu-web run build`
+7. **Deploy command:** `pnpm --filter cu-web exec wrangler deploy --env=dev`
+8. **Build environment variables:**
+   - `NODE_VERSION=20`
+9. Save. No secrets needed for web.
+
+### 0.6. First deploys
+
+Push to the chosen branch. Workers Builds runs both workers' builds and deploys.
+
+### 0.7. Bootstrap
+
+```sh
+# Browse to https://cms-dev.codeuncode.com/admin → create first admin user.
+
+# Seed
+curl "https://cms-dev.codeuncode.com/seed?secret=$SEED_SECRET&only=clients,proposals"
+```
+
+### 0.8. Smoke test
+
+- `https://cms-dev.codeuncode.com/admin` loads, you can log in.
+- `https://dev.codeuncode.com/proposals/consultway-proposal-a` — public proposal renders. Browser Print → Save as PDF works.
+- `https://dev.codeuncode.com/edit/proposals/consultway-proposal-a` — sign in at the CMS admin first (cookie spans `.codeuncode.com`), then click any text on the editor page; status pill should flash *Saving… Saved*.
+- Live preview iframe in the proposal admin form re-renders as you type.
+
+### 0.9. Cron worker (only after the CMS worker exists)
+
+See [Phase D — cron worker](#phase-d--cron-worker-any-env).
+
+---
+
 ## Phase A — `test` env
 
 ### A1. Create resources (CLI)
@@ -222,6 +312,52 @@ After a few stable days:
 - Back up then delete old prod D1 (`wrangler d1 export ... --output prod-final-backup.sql`, then delete).
 - Back up then delete old prod R2 bucket.
 - Archive old-core GitHub repo.
+
+---
+
+## Phase D — cron worker (any env)
+
+The cron worker (`apps/cron`) runs the daily `/cold-flag-cron` job. It's a separate Cloudflare Worker that talks to the CMS over a service binding. **Do this after the CMS worker for the env exists** — the binding requires the target worker to be deployable by name.
+
+Repeat for each env (`dev`, `test`, `live`) you want the schedule on.
+
+### D1. Create `codeuncode-cron-<env>` worker (dash)
+
+1. Workers & Pages → **Create** → **Import a repository** (Git).
+2. Same repo.
+3. **Project name:** `codeuncode-cron-<env>` (e.g. `codeuncode-cron-dev`).
+4. **Production branch:** same as the CMS worker for this env.
+5. **Root directory:** `apps/cron`.
+6. **Build command:** `pnpm install --frozen-lockfile`
+7. **Deploy command:** `pnpm --filter cu-cron exec wrangler deploy --env=<env>`
+8. **Build environment variables:** `NODE_VERSION=20`
+9. Save.
+
+### D2. Set the cron worker's secret (CLI)
+
+The cron worker sends `Authorization: Bearer ${CRON_SECRET}` on every call. Must be the **same** value as the CMS worker's `CRON_SECRET` (set in 0.4 / A4 / B3).
+
+```sh
+cd apps/cron
+pnpm exec wrangler secret put CRON_SECRET --env=<env>
+```
+
+### D3. Trigger / smoke test
+
+- Cron schedule (`triggers.crons` in `apps/cron/wrangler.jsonc`) is `0 4 * * *` — daily at 04:00 UTC.
+- Manual fire: `curl -X POST https://codeuncode-cron-<env>.<account>.workers.dev/run` → should log to the cron worker and call `/cold-flag-cron` on the CMS via the service binding.
+- Watch: Workers & Pages → `codeuncode-cron-<env>` → Logs.
+
+### D4. Verify in the CMS
+
+After the manual fire, hit the same `/cold-flag-cron` directly to confirm the secret matches:
+
+```sh
+curl -i -X POST https://cms-<env>.codeuncode.com/cold-flag-cron \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+Expect `200` with `{ ok: true, flipped: <n>, ids: [...], cutoff: "..." }`. A `401` means the secret on the cron worker and the CMS worker don't match — re-set both.
 
 ---
 

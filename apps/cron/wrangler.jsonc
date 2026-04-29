@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": "./src/index.ts",
+  "account_id": "9aa603db8b4ff3924b801a2c0f0c49fb",
+  "compatibility_date": "2026-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  // Top-level has no env by design — every deploy must pick one with --env=<name>.
+  "env": {
+    // Local. Hits the local CMS over service binding when running both with `wrangler dev`.
+    // Trigger manually: wrangler dev --env=local --test-scheduled then GET /__scheduled
+    "local": {
+      "services": [
+        { "binding": "CMS", "service": "codeuncode-cms-local" }
+      ],
+      "vars": {}
+    },
+    // Remote dev sandbox.
+    "dev": {
+      "name": "codeuncode-cron-dev",
+      "services": [
+        { "binding": "CMS", "service": "codeuncode-cms-dev" }
+      ],
+      "triggers": { "crons": ["0 4 * * *"] }
+    },
+    // Remote pre-prod.
+    "test": {
+      "name": "codeuncode-cron-test",
+      "services": [
+        { "binding": "CMS", "service": "codeuncode-cms-test" }
+      ],
+      "triggers": { "crons": ["0 4 * * *"] }
+    },
+    // Remote prod.
+    "live": {
+      "name": "codeuncode-cron-live",
+      "services": [
+        { "binding": "CMS", "service": "codeuncode-cms" }
+      ],
+      "triggers": { "crons": ["0 4 * * *"] }
+    }
+  }
+}

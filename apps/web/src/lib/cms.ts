@@ -1,4 +1,4 @@
-import type { Service, Project, RateCardSetting, Category, Tag, Brand, Partner, Media } from "@cms/payload-types";
+import type { Service, Project, RateCardSetting, Category, Tag, Brand, Partner, Media, Proposal, Client } from "@cms/payload-types";
 
 export type ServiceWithRefs = Omit<Service, "category" | "tags"> & {
   category: Category;
@@ -228,6 +228,81 @@ export const getMediaById = async (
     });
     if (!res.ok) return null;
     return (await res.json()) as Media;
+  } catch (err) {
+    if (isCmsDown(err)) return null;
+    throw err;
+  }
+};
+
+// --- Proposals ---
+
+// A Payload version doc wraps the actual collection data inside .version.
+export type ProposalVersion = {
+  id: string;
+  parent: number | { id: number };
+  version: Proposal;
+  createdAt: string;
+  updatedAt: string;
+  _status?: "draft" | "published";
+};
+
+export const getProposalBySlug = async (slug: string): Promise<Proposal | null> => {
+  const params = new URLSearchParams({
+    "where[urlSlug][equals]": slug,
+    limit: "1",
+    // depth=2 so client.logo (Media) resolves on the rendered page.
+    depth: "2",
+  });
+  const data = await fetchJson<PayloadList<Proposal>>(
+    `/api/proposals?${params}`,
+    emptyList<Proposal>(),
+  );
+  return data.docs[0] ?? null;
+};
+
+export const getProposalBySlugPreview = async (
+  slug: string,
+  cookie: string | null,
+): Promise<Proposal | null> => {
+  const params = new URLSearchParams({
+    "where[urlSlug][equals]": slug,
+    draft: "true",
+    limit: "1",
+    depth: "2",
+  });
+  const data = await previewFetch<PayloadList<Proposal>>(
+    `/api/proposals?${params}`,
+    cookie,
+    emptyList<Proposal>(),
+  );
+  return data.docs[0] ?? null;
+};
+
+// For live preview: Payload's postMessage sends `client` as a bare number.
+// Fetch the full Client (with logo) so the preview render isn't degraded.
+export const getClientById = async (
+  id: number,
+  cookie: string | null,
+): Promise<Client | null> => {
+  try {
+    const res = await fetch(`${CMS_URL}/api/clients/${id}?depth=1`, {
+      headers: cookie ? { cookie } : {},
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as Client;
+  } catch (err) {
+    if (isCmsDown(err)) return null;
+    throw err;
+  }
+};
+
+export const getProposalVersionById = async (
+  versionId: string,
+): Promise<ProposalVersion | null> => {
+  try {
+    const res = await fetch(`${CMS_URL}/api/proposals/versions/${versionId}?depth=2`);
+    if (!res.ok) return null;
+    return (await res.json()) as ProposalVersion;
   } catch (err) {
     if (isCmsDown(err)) return null;
     throw err;
