@@ -66,6 +66,24 @@ async function getDevAdminCookie(): Promise<string | null> {
     console.log(
       `[proposal-edit] dev login ok as user #${data.user?.id ?? '?'}; cached token`,
     )
+
+    // Verify the cookie actually authenticates by calling /api/users/me.
+    try {
+      const me = await fetch(`${CMS_URL}/api/users/me`, {
+        headers: { cookie: cachedDevCookie },
+      })
+      const meBody = (await me.json()) as { user?: { id?: number | string } | null }
+      if (!me.ok || !meBody.user) {
+        console.warn(
+          `[proposal-edit] cookie didn't authenticate /api/users/me — ${me.status}, body: ${JSON.stringify(meBody)}`,
+        )
+      } else {
+        console.log(`[proposal-edit] cookie verified — /api/users/me returns user #${meBody.user.id}`)
+      }
+    } catch (e) {
+      console.warn('[proposal-edit] /api/users/me verification threw', e)
+    }
+
     return cachedDevCookie
   } catch (err) {
     console.error('[proposal-edit] dev login threw:', err)
@@ -73,11 +91,17 @@ async function getDevAdminCookie(): Promise<string | null> {
   }
 }
 
+const WEB_ORIGIN = readEnv('PUBLIC_WEB_URL') ?? 'http://localhost:4321'
+
 const patchProposal = (id: string | number, patch: unknown, cookie: string | null) =>
   fetch(`${CMS_URL}/api/proposals/${id}`, {
     method: 'PATCH',
     headers: {
       'content-type': 'application/json',
+      // Server-to-server fetch doesn't auto-set Origin, but Payload's CSRF
+      // protection (csrf: [WEB_URL]) checks Origin/Referer for cookie-auth
+      // mutations. Set it explicitly so we match the CMS's allowlist.
+      origin: WEB_ORIGIN,
       ...(cookie ? { cookie } : {}),
     },
     body: JSON.stringify(patch),
