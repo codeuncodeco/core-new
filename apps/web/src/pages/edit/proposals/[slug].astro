@@ -24,15 +24,22 @@ let authed = false;
 let unreachable = false;
 let meStatus: number | null = null;
 let cookieHasPayloadToken = false;
+let meBodyPreview = "";
 try {
   cookieHasPayloadToken = Boolean(cookie && /(?:^|;\s*)payload-token=/.test(cookie));
   const meRes = await fetch(`${CMS_URL}/api/users/me`, {
     headers: cookie ? { cookie } : {},
   });
   meStatus = meRes.status;
+  const text = await meRes.text();
+  meBodyPreview = text.length > 400 ? `${text.slice(0, 400)}…` : text;
   if (meRes.ok) {
-    const me = (await meRes.json()) as { user?: { id?: number | string } };
-    authed = Boolean(me.user?.id);
+    try {
+      const me = JSON.parse(text) as { user?: { id?: number | string } };
+      authed = Boolean(me.user?.id);
+    } catch {
+      // not JSON
+    }
   }
 } catch {
   unreachable = true;
@@ -41,20 +48,24 @@ try {
 if (!authed && !import.meta.env.DEV && !unreachable) {
   // Diagnostic body so we can tell *why* it failed without sifting through
   // worker logs.
+  const tokens = cookie?.match(/(?:^|;\s*)payload-token=([^;]+)/g) ?? [];
   const lines = [
     "Unauthorized — couldn't verify a CMS session for this request.",
     "",
     `Cookie header present:    ${cookie ? "yes" : "no"}`,
     `payload-token in cookies: ${cookieHasPayloadToken ? "yes" : "no"}`,
+    `payload-token count:      ${tokens.length}`,
     `/api/users/me status:     ${meStatus ?? "no response"}`,
+    `/api/users/me body:       ${meBodyPreview || "(empty)"}`,
     `CMS reachable:            ${unreachable ? "no" : "yes"}`,
     "",
-    "If 'payload-token in cookies' is no:",
-    `  Sign in at ${CMS_URL.replace(/\/+$/, "")}/admin first, then come back.`,
-    "",
-    "If it's yes but /api/users/me returned 401:",
-    "  The cookie domain isn't shared between the web and CMS subdomains.",
-    "  Clear cookies for *.codeuncode.com and re-login.",
+    "Common causes:",
+    "  - /me returns user:null → JWT couldn't be validated.",
+    "    Check PAYLOAD_SECRET matches the secret the JWT was signed with.",
+    "  - More than one payload-token cookie in the header → another",
+    "    subdomain (cms.*, cms-test.*) set a token at a different domain",
+    "    scope. The browser sends both; Payload picks the wrong one.",
+    "    Clear cookies for ALL *.codeuncode.com subdomains and re-login.",
   ].join("\n");
   return new Response(lines, {
     status: 401,
