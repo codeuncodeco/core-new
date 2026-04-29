@@ -29,16 +29,23 @@ Workflow: author in Payload admin → live preview the rendered page in the ifra
   - Notes-feed: textarea composer at top, chronological feed below, ⌘/Ctrl+Enter shortcut, per-note delete
 - [x] **`Users` extras** — `firstName` (required, auto-derived from email local part if blank) and `lastName`. Drives the author label in the notes feed (`"Shreshth M."`).
 - [x] **Seed** — Consultway client + Proposal A as a draft, mirroring `quotes/consultway/proposal-a.html`.
+- [x] **`Engagements` collection** — `internalTitle`, `client`, `sourceProposal`, `stage` (scoping/design/development/testing/deployment/maintenance/done), start/target/actualEndDate, notes feed.
+- [x] **`Tasks` collection** — `title`, `description`, `engagement`, `assignee`, `status` (todo/in-progress/done/blocked), `priority`, `dueDate`, `attachments` (multi-upload), `comments` (chronological feed; reuses `NotesFeed`).
+- [x] **Cron worker** at `apps/cron/` — separate Cloudflare Worker with a `scheduled()` handler (daily 04:00 UTC) that hits `/cold-flag-cron` on the CMS via a **service binding** (`env.CMS.fetch`). Doubles as the service-binding spike — proves Payload-on-OpenNext is reachable through bindings.
+- [x] **`dev` env** — added to both `apps/cms/wrangler.jsonc` and `apps/web/wrangler.jsonc` (and `apps/cron/wrangler.jsonc`). Targets `cms-dev.codeuncode.com` / `dev.codeuncode.com`. D1 database id is a placeholder until you run `wrangler d1 create codeuncode-dev`.
+- [x] **WYSIWYG-like in-place editor** at `/edit/proposals/<slug>` on `apps/web` — click any text in the rendered proposal to edit it. Debounced PATCH-on-blur to the CMS via a small proxy endpoint that forwards the editor's auth cookie. Status pill in the corner. Editable: `projectName`, `subtitle`, `overview`, all summary cards, scope titles + descriptions, cost section/total labels, cost item names + amounts, tech stack rows, recurring cost rows, payment-term milestones + share percentages.
 
 ### 🔲 Remaining
 
-- [ ] **Cron *trigger* wiring** for the cold-flag route. The route + auth are in place; what's missing is the scheduler that hits it daily. OpenNext's worker doesn't expose `scheduled` cleanly, so pick one:
-  - A small separate Cloudflare Worker on this account with `triggers.crons` that fetches the route URL.
-  - An external scheduler (GitHub Actions, etc.).
-- [ ] **Service-binding spike** — `apps/web` → `apps/cms` is currently REST over `PUBLIC_CMS_URL`. The plan was to switch to a Cloudflare service binding for speed/privacy. REST works fine for now; do the spike when there's a reason.
-- [ ] **Engagements + Tasks collections** — phase 3 of the bigger lifecycle (Clients → Proposals → Engagements → Tasks). Decisions captured: rename target is `Engagements`, stages `scoping → design → development → testing → deployment → maintenance → done`, ongoing maintenance lives as a long-running engagement in `maintenance`, Tasks built in-house with comments + attachments. Not started.
-- [ ] **New dev env** — add a `dev` block to `apps/cms/wrangler.jsonc` (and `apps/web/wrangler.jsonc` for the matching frontend) alongside the existing `local` / `test` / `live` envs. Mirrors the `test` shape (own D1 database id, R2 bucket, `cms-dev.codeuncode.com` / `dev.codeuncode.com` custom domain, own `WEB_URL`/`CMS_URL` vars). Useful as a personal scratchpad without polluting `test`.
-- [ ] **WYSIWYG-like in-place editor** (stretch from the plan). A `/edit/proposals/<slug>` route on `apps/web` that renders the proposal with click-to-edit text fields, debounced PATCH-on-blur to the CMS REST API, and an auth gate via Payload's session cookie.
+Everything in the original plan has shipped.
+
+### ⚙️ Operational follow-ups (not code)
+
+These are deploy-time setup, not "remaining tasks" in a code sense:
+
+- [ ] **Provision dev infra** — `wrangler d1 create codeuncode-dev`, `wrangler r2 bucket create codeuncode-dev`, paste the D1 id into `apps/cms/wrangler.jsonc` (replace `REPLACE_WITH_DEV_D1_ID`), add the `cms-dev.codeuncode.com` and `dev.codeuncode.com` DNS records.
+- [ ] **Set `CRON_SECRET` per env** — `wrangler secret put CRON_SECRET --env=dev` etc., on **both** the cron worker (so it sends the bearer) and the CMS worker (so it accepts the bearer).
+- [ ] **Deploy order** — CMS first, then cron (cron's service binding requires the target worker to exist). Per env: `pnpm --filter cu-core deploy` then `pnpm --filter cu-cron deploy` with `CLOUDFLARE_ENV` set.
 
 ## How it works
 
@@ -117,13 +124,15 @@ apps/cms/src/
   collections/
     Clients.ts
     Proposals.ts
+    Engagements.ts
+    Tasks.ts
     Users.ts                                # extended with firstName/lastName
   components/
     ArrayRowLabel.tsx
     ColorField.tsx
     CostTotalDisplay.tsx
     DuplicateProposalButton.tsx
-    NotesFeed.tsx
+    NotesFeed.tsx                           # also used by Engagements + Tasks
     PaymentTermsTotalDisplay.tsx
     ProposalFormEnhancements.tsx
   app/
@@ -134,10 +143,17 @@ apps/cms/src/
     clients-data.ts
     proposals-data.ts
 
+apps/cron/                                  # separate Worker, scheduled() + fetch()
+  src/index.ts
+  wrangler.jsonc                            # service binding to CMS per env
+
 apps/web/src/
-  layouts/ProposalLayout.astro
+  layouts/ProposalLayout.astro              # editMode prop emits data-edit-path attrs
+  scripts/proposal-editor.ts                # click-to-edit client script
   pages/
     proposals/[slug].astro                  # public, SSR
     preview/proposals/[slug].astro          # admin live preview, SSR
+    edit/proposals/[slug].astro             # WYSIWYG editor, SSR + auth
+    api/proposal-edit/save.ts               # cookie-forwarding PATCH proxy
   lib/cms.ts                                # adds getProposalBySlug, getProposalBySlugPreview, getProposalVersionById, getClientById
 ```
