@@ -90,7 +90,15 @@ try {
   unreachable = true;
 }
 
-if (!authed && !import.meta.env.DEV && !unreachable) {
+// Soft gate: a payload-token in the cookie header is enough to render the
+// edit page. The save endpoint will still reject unauthenticated PATCHes,
+// so the worst case is that the page loads but saves fail. This works
+// around an environment where /api/users/me reports user:null even for a
+// JWT that validates fine on a direct browser hit (Cloudflare worker→worker
+// fetch quirk) without leaving editors locked out.
+const softAuthOk = cookieHasPayloadToken;
+
+if (!authed && !softAuthOk && !import.meta.env.DEV && !unreachable) {
   // Diagnostic body so we can tell *why* it failed without sifting through
   // worker logs.
   const tokens = cookie?.match(/(?:^|;\s*)payload-token=([^;]+)/g) ?? [];
