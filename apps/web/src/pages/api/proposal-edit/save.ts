@@ -54,16 +54,18 @@ async function getDevAdminCookie(): Promise<string | null> {
       )
       return null
     }
-    // Some runtimes return multiple set-cookie headers; prefer getSetCookie() if available.
-    const headers = res.headers as Headers & { getSetCookie?: () => string[] }
-    const cookies = typeof headers.getSetCookie === 'function' ? headers.getSetCookie() : []
-    const setCookie = cookies[0] ?? res.headers.get('set-cookie')
-    if (!setCookie) {
-      console.warn('[proposal-edit] dev login response had no set-cookie header')
+    // Read the JWT directly from the response body and build the cookie
+    // ourselves. Avoids set-cookie parsing issues (multiple cookies, attribute
+    // ordering) that can mangle the value when forwarded to the next request.
+    const data = (await res.json()) as { token?: string; user?: { id: number | string } }
+    if (!data.token) {
+      console.warn('[proposal-edit] dev login response had no token in body')
       return null
     }
-    cachedDevCookie = setCookie.split(';')[0] ?? null
-    console.log('[proposal-edit] dev login ok; cached cookie for this worker process')
+    cachedDevCookie = `payload-token=${data.token}`
+    console.log(
+      `[proposal-edit] dev login ok as user #${data.user?.id ?? '?'}; cached token`,
+    )
     return cachedDevCookie
   } catch (err) {
     console.error('[proposal-edit] dev login threw:', err)
