@@ -25,8 +25,26 @@ let unreachable = false;
 let meStatus: number | null = null;
 let cookieHasPayloadToken = false;
 let meBodyPreview = "";
+let tokenFingerprint = "";
+let cookieLength = 0;
+let altMeStatus: number | null = null;
+let altMeBodyPreview = "";
+
+// Pull just the payload-token=<jwt> portion so we can fingerprint it (head
+// and tail of the JWT) without exposing the whole signed value.
+const tokenMatch = cookie?.match(/(?:^|;\s*)payload-token=([^;]+)/);
+const tokenValue = tokenMatch?.[1] ?? "";
+if (tokenValue) {
+  const head = tokenValue.slice(0, 8);
+  const tail = tokenValue.slice(-8);
+  tokenFingerprint = `${head}…${tail} (len ${tokenValue.length})`;
+}
+cookieLength = cookie?.length ?? 0;
+
 try {
-  cookieHasPayloadToken = Boolean(cookie && /(?:^|;\s*)payload-token=/.test(cookie));
+  cookieHasPayloadToken = Boolean(tokenValue);
+
+  // Primary call — forward the entire incoming cookie header verbatim.
   const meRes = await fetch(`${CMS_URL}/api/users/me`, {
     headers: cookie ? { cookie } : {},
   });
@@ -41,6 +59,33 @@ try {
       // not JSON
     }
   }
+
+  // Diagnostic alt-call — send ONLY payload-token, no other cookies. If this
+  // succeeds where the primary fails, something else in the cookie header is
+  // confusing Payload's parser.
+  if (!authed && tokenValue) {
+    const altRes = await fetch(`${CMS_URL}/api/users/me`, {
+      headers: {
+        cookie: `payload-token=${tokenValue}`,
+        // Mimic a normal browser request a bit — server-to-server fetch
+        // sometimes lacks a User-Agent which can be filtered upstream.
+        "user-agent": "Mozilla/5.0 (proposal-edit-ssr)",
+      },
+    });
+    altMeStatus = altRes.status;
+    const altText = await altRes.text();
+    altMeBodyPreview = altText.length > 400 ? `${altText.slice(0, 400)}…` : altText;
+    if (altRes.ok) {
+      try {
+        const me = JSON.parse(altText) as { user?: { id?: number | string } };
+        if (me.user?.id) {
+          authed = true;
+        }
+      } catch {
+        // not JSON
+      }
+    }
+  }
 } catch {
   unreachable = true;
 }
@@ -52,20 +97,26 @@ if (!authed && !import.meta.env.DEV && !unreachable) {
   const lines = [
     "Unauthorized — couldn't verify a CMS session for this request.",
     "",
-    `Cookie header present:    ${cookie ? "yes" : "no"}`,
-    `payload-token in cookies: ${cookieHasPayloadToken ? "yes" : "no"}`,
-    `payload-token count:      ${tokens.length}`,
-    `/api/users/me status:     ${meStatus ?? "no response"}`,
-    `/api/users/me body:       ${meBodyPreview || "(empty)"}`,
-    `CMS reachable:            ${unreachable ? "no" : "yes"}`,
+    `Cookie header present:     ${cookie ? "yes" : "no"}`,
+    `Cookie header length:      ${cookieLength}`,
+    `payload-token in cookies:  ${cookieHasPayloadToken ? "yes" : "no"}`,
+    `payload-token count:       ${tokens.length}`,
+    `payload-token fingerprint: ${tokenFingerprint || "(none)"}`,
+    `/api/users/me status:      ${meStatus ?? "no response"}`,
+    `/api/users/me body:        ${meBodyPreview || "(empty)"}`,
+    `Alt /me (only token + UA): ${altMeStatus ?? "skipped"}`,
+    `Alt /me body:              ${altMeBodyPreview || "(empty)"}`,
+    `CMS reachable:             ${unreachable ? "no" : "yes"}`,
     "",
-    "Common causes:",
-    "  - /me returns user:null → JWT couldn't be validated.",
-    "    Check PAYLOAD_SECRET matches the secret the JWT was signed with.",
-    "  - More than one payload-token cookie in the header → another",
-    "    subdomain (cms.*, cms-test.*) set a token at a different domain",
-    "    scope. The browser sends both; Payload picks the wrong one.",
-    "    Clear cookies for ALL *.codeuncode.com subdomains and re-login.",
+    "Compare the fingerprint above with the cookie value in DevTools at",
+    "cms-dev.codeuncode.com. If they match, the cookie is reaching the CMS",
+    "intact and the failure is on the validation side (secret mismatch or",
+    "JWT expired). If they DON'T match, the cookie is being mangled in",
+    "transit between web → cms.",
+    "",
+    "If the alt /me call succeeded where the primary failed, an extra",
+    "cookie or missing User-Agent on the primary call was confusing the",
+    "CMS — let me know the result.",
   ].join("\n");
   return new Response(lines, {
     status: 401,
