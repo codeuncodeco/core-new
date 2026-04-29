@@ -22,10 +22,14 @@ const CMS_URL = import.meta.env.PUBLIC_CMS_URL || "http://localhost:3000";
 // Auth check — production only; non-fatal in dev.
 let authed = false;
 let unreachable = false;
+let meStatus: number | null = null;
+let cookieHasPayloadToken = false;
 try {
+  cookieHasPayloadToken = Boolean(cookie && /(?:^|;\s*)payload-token=/.test(cookie));
   const meRes = await fetch(`${CMS_URL}/api/users/me`, {
     headers: cookie ? { cookie } : {},
   });
+  meStatus = meRes.status;
   if (meRes.ok) {
     const me = (await meRes.json()) as { user?: { id?: number | string } };
     authed = Boolean(me.user?.id);
@@ -35,10 +39,27 @@ try {
 }
 
 if (!authed && !import.meta.env.DEV && !unreachable) {
-  return new Response(
-    "Unauthorized. Sign in at the CMS admin first, then return here.",
-    { status: 401 },
-  );
+  // Diagnostic body so we can tell *why* it failed without sifting through
+  // worker logs.
+  const lines = [
+    "Unauthorized — couldn't verify a CMS session for this request.",
+    "",
+    `Cookie header present:    ${cookie ? "yes" : "no"}`,
+    `payload-token in cookies: ${cookieHasPayloadToken ? "yes" : "no"}`,
+    `/api/users/me status:     ${meStatus ?? "no response"}`,
+    `CMS reachable:            ${unreachable ? "no" : "yes"}`,
+    "",
+    "If 'payload-token in cookies' is no:",
+    `  Sign in at ${CMS_URL.replace(/\/+$/, "")}/admin first, then come back.`,
+    "",
+    "If it's yes but /api/users/me returned 401:",
+    "  The cookie domain isn't shared between the web and CMS subdomains.",
+    "  Clear cookies for *.codeuncode.com and re-login.",
+  ].join("\n");
+  return new Response(lines, {
+    status: 401,
+    headers: { "content-type": "text/plain; charset=utf-8" },
+  });
 }
 
 const proposal = await getProposalBySlugPreview(slug, cookie);

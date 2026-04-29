@@ -1,5 +1,19 @@
 import type { CollectionConfig, FieldHook } from 'payload'
 
+const deriveCookieDomain = (): string | undefined => {
+  const cmsUrl = process.env.CMS_URL
+  if (!cmsUrl) return undefined
+  try {
+    const host = new URL(cmsUrl).hostname
+    if (host === 'codeuncode.com' || host.endsWith('.codeuncode.com')) {
+      return '.codeuncode.com'
+    }
+    return undefined
+  } catch {
+    return undefined
+  }
+}
+
 // Derive a default firstName from the email's local part when blank, e.g.
 // "sm@gmail.com" → "sm". Lets us keep firstName required without forcing
 // users to type it on every account creation.
@@ -19,13 +33,17 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
   },
   auth: {
-    // Scope the auth cookie to the parent domain in prod so the web app at
-    // `codeuncode.com` can forward it on upstream fetches to `cms.codeuncode.com`
-    // (used by SSR preview routes to authenticate draft content requests).
-    // In local dev we leave domain undefined so the default localhost-scoped
-    // cookie works across ports.
+    // Scope the auth cookie to the parent domain on any codeuncode.com
+    // deployment so the web app at e.g. dev.codeuncode.com can forward it
+    // upstream to cms-dev.codeuncode.com (used by SSR preview/edit routes
+    // to authenticate draft content + save requests). In local dev we
+    // leave it undefined so the default localhost-scoped cookie works.
+    //
+    // Derived from CMS_URL (a wrangler var) rather than NODE_ENV — NODE_ENV
+    // can be unset on Cloudflare Workers depending on how the runtime is
+    // started, while CMS_URL is reliably set per env.
     cookies: {
-      domain: process.env.NODE_ENV === 'production' ? '.codeuncode.com' : undefined,
+      domain: deriveCookieDomain(),
     },
   },
   fields: [
