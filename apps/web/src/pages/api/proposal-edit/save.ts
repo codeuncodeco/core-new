@@ -91,24 +91,30 @@ async function getDevAdminCookie(): Promise<string | null> {
   }
 }
 
-const WEB_ORIGIN = readEnv('PUBLIC_WEB_URL') ?? 'http://localhost:4321'
-
-const patchProposal = (id: string | number, patch: unknown, cookie: string | null) =>
+const patchProposal = (
+  id: string | number,
+  patch: unknown,
+  cookie: string | null,
+  origin: string,
+) =>
   fetch(`${CMS_URL}/api/proposals/${id}`, {
     method: 'PATCH',
     headers: {
       'content-type': 'application/json',
       // Server-to-server fetch doesn't auto-set Origin, but Payload's CSRF
       // protection (csrf: [WEB_URL]) checks Origin/Referer for cookie-auth
-      // mutations. Set it explicitly so we match the CMS's allowlist.
-      origin: WEB_ORIGIN,
+      // mutations. Use the actual request's origin so it matches the CMS's
+      // allowlist on every env (dev/test/live), not a stale env-var default.
+      origin,
       ...(cookie ? { cookie } : {}),
     },
     body: JSON.stringify(patch),
   })
 
-export const POST = async ({ request }: APIContext): Promise<Response> => {
+export const POST = async ({ request, url }: APIContext): Promise<Response> => {
   const userCookie = request.headers.get('cookie')
+  // Use the actual incoming request's origin for the CMS CSRF check.
+  const origin = url.origin
 
   type SaveBody = { id?: string | number; patch?: Record<string, unknown> }
   let body: SaveBody | null = null
@@ -124,7 +130,7 @@ export const POST = async ({ request }: APIContext): Promise<Response> => {
   }
 
   try {
-    let res = await patchProposal(id, patch, userCookie)
+    let res = await patchProposal(id, patch, userCookie, origin)
 
     if ((res.status === 401 || res.status === 403) && import.meta.env.DEV) {
       console.warn(
@@ -134,7 +140,7 @@ export const POST = async ({ request }: APIContext): Promise<Response> => {
       if (devCookie) {
         // Drain the first response body so the connection can be reused.
         await res.text()
-        res = await patchProposal(id, patch, devCookie)
+        res = await patchProposal(id, patch, devCookie, origin)
         if (!res.ok) {
           console.warn(
             `[proposal-edit] retry with dev cookie also failed: ${res.status} ${res.statusText}`,
