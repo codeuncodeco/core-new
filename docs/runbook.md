@@ -87,12 +87,13 @@ curl "https://cms-dev.codeuncode.com/seed?secret=$SEED_SECRET&only=clients,propo
 
 - `https://cms-dev.codeuncode.com/admin` loads, you can log in.
 - `https://dev.codeuncode.com/proposals/consultway-proposal-a` — public proposal renders. Browser Print → Save as PDF works.
-- `https://dev.codeuncode.com/edit/proposals/consultway-proposal-a` — sign in at the CMS admin first (cookie spans `.codeuncode.com`), then click any text on the editor page; status pill should flash *Saving… Saved*.
+- `https://dev.codeuncode.com/edit/proposals/consultway-proposal-a` — sign in at the CMS admin first (cookie spans `.codeuncode.com`), then click any text on the editor page; status pill should flash _Saving… Saved_.
 - Live preview iframe in the proposal admin form re-renders as you type.
 
 ### 0.9. Cron worker (only after the CMS worker exists)
 
 See [Phase D — cron worker](#phase-d--cron-worker-any-env).
+.
 
 ---
 
@@ -162,6 +163,7 @@ pnpm exec wrangler secret put RESEND_API_KEY --env=test   # reuse old-core's key
 ### A6. Trigger first deploys
 
 Push any commit to `main`. CF Workers Builds runs both workers' builds + deploys. Monitor:
+
 - Workers & Pages → each project → **Deployments** tab.
 
 Migrations run automatically on CMS deploy because `apps/cms/package.json`'s `build` script calls `migrate:prod` first — against the env picked by `CLOUDFLARE_ENV=test`.
@@ -215,6 +217,7 @@ Commit the wrangler.jsonc change.
 ### B2. Create `codeuncode-cms` worker (dash)
 
 Same steps as A3 but:
+
 - **Project name:** `codeuncode-cms`
 - **Build command:** `pnpm install --frozen-lockfile && pnpm --filter cu-core exec opennextjs-cloudflare build --env=live`
 - **Deploy command:** `pnpm --filter cu-core exec opennextjs-cloudflare deploy --env=live`
@@ -233,6 +236,7 @@ pnpm exec wrangler secret put RESEND_API_KEY --env=live   # same key as test (sh
 ### B4. Create `codeuncode-web` worker (dash)
 
 Same as A5 but:
+
 - **Project name:** `codeuncode-web`
 - **Deploy command:** `pnpm --filter cu-web exec wrangler deploy --env=live`
 - **Production branch:** same decision as B2.
@@ -240,6 +244,7 @@ Same as A5 but:
 ### B5. First deploy
 
 Push to the chosen branch. Workers Builds runs → workers serve on their `workers.dev` URLs:
+
 - `https://codeuncode-cms.<account>.workers.dev`
 - `https://codeuncode-web.<account>.workers.dev`
 
@@ -277,6 +282,7 @@ pnpm run migration:import:live
 ### C2. Release routes from old-core
 
 Either:
+
 - Remove `cms.codeuncode.com` + `codeuncode.com` route blocks from old-core's `wrangler.jsonc` → redeploy old-core, **or**
 - Delete the routes in Cloudflare dashboard → Workers → old-core worker → Triggers.
 
